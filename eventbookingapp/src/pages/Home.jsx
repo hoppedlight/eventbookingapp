@@ -13,7 +13,7 @@ export default function Home() {
     category: "All",
     date: null,
     maxPrice: 500,
-    city: ""
+    city: "",
   });
   const [appliedFilters, setAppliedFilters] = useState(filters);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -23,36 +23,39 @@ export default function Home() {
     const urlParams = new URLSearchParams(window.location.search);
     const categoryParam = urlParams.get("category");
     if (categoryParam) {
-      setFilters(prev => ({ ...prev, category: categoryParam }));
-      setAppliedFilters(prev => ({ ...prev, category: categoryParam }));
+      setFilters((prev) => ({ ...prev, category: categoryParam }));
+      setAppliedFilters((prev) => ({ ...prev, category: categoryParam }));
     }
   }, []);
 
   // Fetch events using the entity
-  const { data: events, isLoading, refetch } = useQuery({
+  const {
+    data: events,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["events", appliedFilters],
     queryFn: async () => {
       let allEvents = await Event.filter({ status: "Published" });
 
-
       // Frontend filters
       if (appliedFilters.category !== "All") {
         allEvents = allEvents.filter(
-          e => e.category === appliedFilters.category
+          (e) => e.category === appliedFilters.category
         );
       }
 
       if (appliedFilters.date) {
         const dateStr = appliedFilters.date.toISOString().split("T")[0];
-        allEvents = allEvents.filter(e => e.date === dateStr);
+        allEvents = allEvents.filter((e) => e.date === dateStr);
       }
 
       if (appliedFilters.maxPrice < 500) {
-        allEvents = allEvents.filter(e => e.price <= appliedFilters.maxPrice);
+        allEvents = allEvents.filter((e) => e.price <= appliedFilters.maxPrice);
       }
 
       if (appliedFilters.city) {
-        allEvents = allEvents.filter(e =>
+        allEvents = allEvents.filter((e) =>
           e.city?.toLowerCase().includes(appliedFilters.city.toLowerCase())
         );
       }
@@ -61,7 +64,6 @@ export default function Home() {
     },
     initialData: [],
   });
-
 
   const handleApplyFilters = () => {
     setAppliedFilters(filters);
@@ -73,7 +75,7 @@ export default function Home() {
       category: "All",
       date: null,
       maxPrice: 500,
-      city: ""
+      city: "",
     };
     setFilters(defaultFilters);
     setAppliedFilters(defaultFilters);
@@ -81,20 +83,22 @@ export default function Home() {
   };
 
   const handleSelectCategory = (category) => {
-    setFilters(prev => ({ ...prev, category }));
-    setAppliedFilters(prev => ({ ...prev, category }));
+    setFilters((prev) => ({ ...prev, category }));
+    setAppliedFilters((prev) => ({ ...prev, category }));
   };
 
   return (
     <div>
       <HeroSection />
-      <CategoryCarousel onSelectCategory={handleSelectCategory} />
+      {/* <CategoryCarousel onSelectCategory={handleSelectCategory} /> */}
 
       <div id="events" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold text-white mb-2">
-              {appliedFilters.category === "All" ? "All Events" : `${appliedFilters.category} Events`}
+              {appliedFilters.category === "All"
+                ? "All Events"
+                : `${appliedFilters.category} Events`}
             </h2>
             <p className="text-white/60">
               {isLoading ? "Loading..." : `${events.length} events found`}
@@ -141,21 +145,35 @@ export default function Home() {
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-[#472426] rounded-2xl h-96 animate-pulse" />
+                  <div
+                    key={i}
+                    className="bg-[#472426] rounded-2xl h-96 animate-pulse"
+                  />
                 ))}
               </div>
             ) : events.length === 0 ? (
               <div className="text-center py-20">
-                <h3 className="text-2xl font-bold text-white mb-2">No Events Found</h3>
-                <p className="text-white/60 mb-6">Try adjusting your filters to see more results</p>
-                <Button onClick={handleClearFilters} className="bg-[#ea2a33] hover:bg-[#ea2a33]/90 text-white">
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  No Events Found
+                </h3>
+                <p className="text-white/60 mb-6">
+                  Try adjusting your filters to see more results
+                </p>
+                <Button
+                  onClick={handleClearFilters}
+                  className="bg-[#ea2a33] hover:bg-[#ea2a33]/90 text-white"
+                >
                   Clear Filters
                 </Button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {events.map((event) => (
-                  <EventCard key={event._id} event={event} onFavoriteChange={refetch} />
+                  <EventCard
+                    key={event._id}
+                    event={event}
+                    onFavoriteChange={refetch}
+                  />
                 ))}
               </div>
             )}

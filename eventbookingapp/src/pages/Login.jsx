@@ -18,7 +18,7 @@ export default function Login() {
     setError(null);
     try {
       await api.auth.login(email, password);
-      navigate(nextUrl); // redirect to next page or home
+      navigate(nextUrl);
     } catch (err) {
       setError("Invalid email or password");
     }
@@ -35,7 +35,7 @@ export default function Login() {
             <Input
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
             />
@@ -45,12 +45,15 @@ export default function Login() {
             <Input
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Your password"
               required
             />
           </div>
-          <Button type="submit" className="w-full bg-[#ea2a33] hover:bg-[#ea2a33]/90">
+          <Button
+            type="submit"
+            className="w-full bg-[#ea2a33] hover:bg-[#ea2a33]/90"
+          >
             Login
           </Button>
         </form>
