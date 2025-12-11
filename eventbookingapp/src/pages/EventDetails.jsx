@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { api } from "@/api/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "../utils";
@@ -14,10 +13,8 @@ import {
   Users,
   Heart,
   Share2,
-  ArrowLeft
+  ArrowLeft,
 } from "lucide-react";
-import { Event } from "@/api/entities/Event";
-import { Booking } from "@/api/entities/Booking";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,7 +46,7 @@ export default function EventDetails() {
   }, [eventId]);
 
   const { data: event, isLoading } = useQuery({
-    queryKey: ['event', eventId],
+    queryKey: ["event", eventId],
     queryFn: async () => {
       const events = await Event.filter({ id: eventId });
       return events[0];
@@ -57,7 +54,7 @@ export default function EventDetails() {
     enabled: !!eventId,
   });
   const { data: relatedEvents } = useQuery({
-    queryKey: ['relatedEvents', event?.category],
+    queryKey: ["relatedEvents", event?.category],
     queryFn: async () => {
       if (!event) return [];
       const events = await Event.filter(
@@ -65,7 +62,7 @@ export default function EventDetails() {
         "-created_date",
         4
       );
-      return events.filter(e => e.id !== eventId);
+      return events.filter((e) => e.id !== eventId);
     },
     enabled: !!event,
     initialData: [],
@@ -79,7 +76,7 @@ export default function EventDetails() {
 
     const favoriteEvents = user.favorite_events || [];
     const newFavorites = isFavorite
-      ? favoriteEvents.filter(id => id !== eventId)
+      ? favoriteEvents.filter((id) => id !== eventId)
       : [...favoriteEvents, eventId];
 
     await api.auth.updateMe({ favorite_events: newFavorites });
@@ -104,18 +101,18 @@ export default function EventDetails() {
         user_name: user.full_name,
         num_tickets: numTickets,
         total_price: event.price * numTickets,
-        booking_status: "Confirmed"
+        booking_status: "Confirmed",
       });
 
       // Update attendees count
       await Event.update(event.id, {
-        attendees_count: (event.attendees_count || 0) + numTickets
+        attendees_count: (event.attendees_count || 0) + numTickets,
       });
 
       alert("Booking confirmed! Check your email for details.");
-      queryClient.invalidateQueries(['event', eventId]);
+      queryClient.invalidateQueries(["event", eventId]);
     } catch (error) {
-        console.log(error)
+      console.log(error);
       alert("Failed to book event. Please try again.");
     }
     setIsBooking(false);
@@ -162,7 +159,10 @@ export default function EventDetails() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Back Button */}
       <Link to={createPageUrl("Home")}>
-        <Button variant="ghost" className="text-white hover:text-[#ea2a33] mb-6">
+        <Button
+          variant="ghost"
+          className="text-white hover:text-[#ea2a33] mb-6"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Events
         </Button>
@@ -171,7 +171,11 @@ export default function EventDetails() {
       {/* Banner */}
       <div className="relative h-[400px] rounded-3xl overflow-hidden mb-8">
         <img
-          src={event.banner_url || event.image_url || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1920"}
+          src={
+            event.banner_url ||
+            event.image_url ||
+            "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1920"
+          }
           alt={event.title}
           className="w-full h-full object-cover"
         />
@@ -184,7 +188,11 @@ export default function EventDetails() {
             size="icon"
             className="bg-[#221112]/80 backdrop-blur-sm hover:bg-[#ea2a33]"
           >
-            <Heart className={`w-5 h-5 ${isFavorite ? "fill-[#ea2a33] text-[#ea2a33]" : ""}`} />
+            <Heart
+              className={`w-5 h-5 ${
+                isFavorite ? "fill-[#ea2a33] text-[#ea2a33]" : ""
+              }`}
+            />
           </Button>
           <Button
             onClick={handleShare}
@@ -207,7 +215,9 @@ export default function EventDetails() {
               </Badge>
             )}
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{event.title}</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            {event.title}
+          </h1>
           <div className="flex flex-wrap gap-6 text-white/90">
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
@@ -215,7 +225,9 @@ export default function EventDetails() {
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              <span>{event.location}, {event.city}</span>
+              <span>
+                {event.location}, {event.city}
+              </span>
             </div>
           </div>
         </div>
@@ -227,7 +239,9 @@ export default function EventDetails() {
           {/* Description */}
           <Card className="bg-[#472426] border-none">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-white mb-4">About This Event</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">
+                About This Event
+              </h2>
               <p className="text-white/80 text-lg leading-relaxed whitespace-pre-wrap">
                 {event.description || "No description available."}
               </p>
@@ -235,7 +249,11 @@ export default function EventDetails() {
               {event.tags && event.tags.length > 0 && (
                 <div className="mt-6 flex flex-wrap gap-2">
                   {event.tags.map((tag, idx) => (
-                    <Badge key={idx} variant="outline" className="border-[#c89295] text-[#c89295]">
+                    <Badge
+                      key={idx}
+                      variant="outline"
+                      className="border-[#c89295] text-[#c89295]"
+                    >
                       #{tag}
                     </Badge>
                   ))}
@@ -247,7 +265,9 @@ export default function EventDetails() {
           {/* Event Details */}
           <Card className="bg-[#472426] border-none">
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold text-white mb-6">Event Details</h2>
+              <h2 className="text-2xl font-bold text-white mb-6">
+                Event Details
+              </h2>
               <div className="grid sm:grid-cols-2 gap-6">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-[#ea2a33]/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -265,7 +285,9 @@ export default function EventDetails() {
                   </div>
                   <div>
                     <p className="text-white/60 text-sm">Ticket Type</p>
-                    <p className="text-white font-medium">{event.ticket_type}</p>
+                    <p className="text-white font-medium">
+                      {event.ticket_type}
+                    </p>
                   </div>
                 </div>
 
@@ -275,7 +297,9 @@ export default function EventDetails() {
                   </div>
                   <div>
                     <p className="text-white/60 text-sm">Capacity</p>
-                    <p className="text-white font-medium">{event.capacity || "Unlimited"}</p>
+                    <p className="text-white font-medium">
+                      {event.capacity || "Unlimited"}
+                    </p>
                   </div>
                 </div>
 
@@ -285,7 +309,9 @@ export default function EventDetails() {
                   </div>
                   <div>
                     <p className="text-white/60 text-sm">Address</p>
-                    <p className="text-white font-medium">{event.address || event.location}</p>
+                    <p className="text-white font-medium">
+                      {event.address || event.location}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -301,11 +327,16 @@ export default function EventDetails() {
                   <User className="w-8 h-8 text-white" />
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xl font-semibold text-white">{event.organizer_name || "Event Organizer"}</p>
+                  <p className="text-xl font-semibold text-white">
+                    {event.organizer_name || "Event Organizer"}
+                  </p>
                   {event.organizer_email && (
                     <div className="flex items-center gap-2 text-white/70">
                       <Mail className="w-4 h-4" />
-                      <a href={`mailto:${event.organizer_email}`} className="hover:text-[#ea2a33]">
+                      <a
+                        href={`mailto:${event.organizer_email}`}
+                        className="hover:text-[#ea2a33]"
+                      >
                         {event.organizer_email}
                       </a>
                     </div>
@@ -313,7 +344,10 @@ export default function EventDetails() {
                   {event.organizer_phone && (
                     <div className="flex items-center gap-2 text-white/70">
                       <Phone className="w-4 h-4" />
-                      <a href={`tel:${event.organizer_phone}`} className="hover:text-[#ea2a33]">
+                      <a
+                        href={`tel:${event.organizer_phone}`}
+                        className="hover:text-[#ea2a33]"
+                      >
                         {event.organizer_phone}
                       </a>
                     </div>
@@ -343,7 +377,9 @@ export default function EventDetails() {
                     min="1"
                     max={event.capacity || 10}
                     value={numTickets}
-                    onChange={(e) => setNumTickets(parseInt(e.target.value) || 1)}
+                    onChange={(e) =>
+                      setNumTickets(parseInt(e.target.value) || 1)
+                    }
                     className="bg-[#221112] border-white/10 text-white"
                   />
                   <p className="text-sm text-white/60">
@@ -363,12 +399,16 @@ export default function EventDetails() {
               <div className="pt-4 border-t border-white/10 space-y-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-white/60">Attending</span>
-                  <span className="text-white font-medium">{event.attendees_count || 0} people</span>
+                  <span className="text-white font-medium">
+                    {event.attendees_count || 0} people
+                  </span>
                 </div>
                 {event.capacity && (
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-white/60">Capacity</span>
-                    <span className="text-white font-medium">{event.capacity} seats</span>
+                    <span className="text-white font-medium">
+                      {event.capacity} seats
+                    </span>
                   </div>
                 )}
               </div>
@@ -380,7 +420,9 @@ export default function EventDetails() {
       {/* Related Events */}
       {relatedEvents.length > 0 && (
         <div className="mt-20">
-          <h2 className="text-3xl font-bold text-white mb-8">More {event.category} Events</h2>
+          <h2 className="text-3xl font-bold text-white mb-8">
+            More {event.category} Events
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {relatedEvents.map((relatedEvent) => (
               <EventCard key={relatedEvent.id} event={relatedEvent} />

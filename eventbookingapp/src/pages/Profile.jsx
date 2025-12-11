@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { api } from "@/api/client";
 import { useMutation } from "@tanstack/react-query";
 import { User, Mail, Phone, MapPin, Heart, Calendar, Settings, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";

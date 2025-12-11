@@ -138,4 +138,5 @@ def update_current_user(request):
 @api_view(["GET"])
 def fetch_events(request):
     events = Event.objects(status="Published")
-    return Response([event.to_mongo() for event in events])
+    return Response([event.to_json_safe() for event in events])
+

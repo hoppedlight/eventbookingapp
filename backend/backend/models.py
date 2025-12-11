@@ -80,6 +80,39 @@ class Event(Document):
         'ordering': ['-created_at'],
         'strict': False
     }
+    
+    def to_json_safe(self):
+        def safe_date(value):
+            return value.isoformat() if isinstance(value, datetime) else value
+
+        return {
+        "id": str(self.id),
+        "title": self.title,
+        "description": self.description,
+        "category": self.category,
+        "subcategory": self.subcategory,
+        "date": safe_date(self.date),
+        "time": self.time,
+        "end_date": safe_date(self.end_date),
+        "location": self.location,
+        "city": self.city,
+        "address": self.address,
+        "price": self.price,
+        "ticket_type": self.ticket_type,
+        "capacity": self.capacity,
+        "organizer_name": self.organizer_name,
+        "organizer_email": self.organizer_email,
+        "organizer_phone": self.organizer_phone,
+        "image_url": self.image_url,
+        "banner_url": self.banner_url,
+        "tags": self.tags,
+        "status": self.status,
+        "featured": self.featured,
+        "attendees_count": self.attendees_count,
+        "created_by": self.created_by,
+        "created_at": safe_date(self.created_at),
+        "updated_at": safe_date(self.updated_at)
+    }
 
     def save(self, *args, **kwargs):
         self.updated_at = datetime.utcnow()

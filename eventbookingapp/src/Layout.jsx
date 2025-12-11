@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { api } from "@/api/client";
+// import { api } from "@/api/client";
 import {
   Calendar,
   Heart,
@@ -266,7 +266,7 @@ export default function Layout({ children, currentPageName }) {
                 </>
               ) : (
                 <Button
-                  onClick={() => api.auth.redirectToLogin(window.location.href)}
+                  onClick={() => (window.location.href = "/login")}
                   className="hidden md:flex bg-[#ea2a33] hover:bg-[#ea2a33]/90 text-white accent-glow"
                 >
                   Sign In
@@ -352,7 +352,7 @@ export default function Layout({ children, currentPageName }) {
               )}
               {!user && (
                 <Button
-                  onClick={() => api.auth.redirectToLogin(window.location.href)}
+                  onClick={() => (window.location.href = "/login")}
                   className="w-full bg-[#ea2a33] hover:bg-[#ea2a33]/90 text-white"
                 >
                   Sign In
