@@ -1,25 +1,49 @@
 import React, { useState } from "react";
-import { api } from "@/api/client";
 import { useNavigate, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function Register() {
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
+  const nextUrl = "/";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
     try {
-      await api.auth.register(email, password, fullName);
-      navigate("/"); // redirect to home after registration
+      const response = await fetch("http://127.0.0.1:8000/api/register/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: fullName,
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+        }
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+        navigate(nextUrl);
+      } else {
+        setError(data.message || "Failed to register");
+      }
     } catch (err) {
-      setError("Registration failed. Try again.");
+      setError("Network error. Please try again.");
     }
   };
 
@@ -34,7 +58,7 @@ export default function Register() {
             <Input
               type="text"
               value={fullName}
-              onChange={e => setFullName(e.target.value)}
+              onChange={(e) => setFullName(e.target.value)}
               placeholder="John Doe"
               required
             />
@@ -44,7 +68,7 @@ export default function Register() {
             <Input
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
             />
@@ -54,12 +78,15 @@ export default function Register() {
             <Input
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Your password"
               required
             />
           </div>
-          <Button type="submit" className="w-full bg-[#ea2a33] hover:bg-[#ea2a33]/90">
+          <Button
+            type="submit"
+            className="w-full bg-[#ea2a33] hover:bg-[#ea2a33]/90"
+          >
             Register
           </Button>
         </form>

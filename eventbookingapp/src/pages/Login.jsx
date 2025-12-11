@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { api } from "@/api/client";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,11 +15,25 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
     try {
-      await api.auth.login(email, password);
-      navigate(nextUrl);
+      const response = await fetch("http://127.0.0.1:8000/api/login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        navigate(nextUrl);
+      } else {
+        setError(data.message || "Invalid email or password");
+      }
     } catch (err) {
-      setError("Invalid email or password");
+      setError("Network error. Please try again.");
     }
   };
 

@@ -13,7 +13,7 @@ import {
   PlusCircle,
   List,
   LogOut,
-  Settings
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,19 +34,42 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const currentUser = await api.auth.me();
-        setUser(currentUser);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setUser(null);
+          return;
+        }
+
+        const res = await fetch("http://127.0.0.1:8000/api/me/", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          setUser(null);
+          return;
+        }
+
+        const data = await res.json();
+        setUser(data);
       } catch (error) {
+        console.error("Fetch user error:", error);
         setUser(null);
       }
     };
+
     fetchUser();
   }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = createPageUrl("SearchResults") + `?q=${encodeURIComponent(searchQuery)}`;
+      window.location.href =
+        createPageUrl("SearchResults") +
+        `?q=${encodeURIComponent(searchQuery)}`;
     }
   };
 
@@ -104,7 +127,10 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <Link to={createPageUrl("Home")} className="flex items-center gap-3 smooth-transition hover:scale-105">
+            <Link
+              to={createPageUrl("Home")}
+              className="flex items-center gap-3 smooth-transition hover:scale-105"
+            >
               <div className="w-10 h-10 bg-gradient-to-br from-[#ea2a33] to-[#c89295] rounded-xl flex items-center justify-center accent-glow">
                 <Calendar className="w-6 h-6 text-white" />
               </div>
@@ -132,7 +158,10 @@ export default function Layout({ children, currentPageName }) {
             </div>
 
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="hidden lg:flex items-center flex-1 max-w-md mx-8">
+            <form
+              onSubmit={handleSearch}
+              className="hidden lg:flex items-center flex-1 max-w-md mx-8"
+            >
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
                 <Input
@@ -167,7 +196,11 @@ export default function Layout({ children, currentPageName }) {
                         className="hidden md:flex rounded-full hover:bg-[#472426]"
                       >
                         {user.avatar_url ? (
-                          <img src={user.avatar_url} alt={user.full_name} className="w-8 h-8 rounded-full object-cover" />
+                          <img
+                            src={user.avatar_url}
+                            alt={user.full_name}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
                         ) : (
                           <div className="w-8 h-8 bg-gradient-to-br from-[#ea2a33] to-[#c89295] rounded-full flex items-center justify-center">
                             <User className="w-4 h-4 text-white" />
@@ -175,32 +208,56 @@ export default function Layout({ children, currentPageName }) {
                         )}
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 bg-[#472426] border-[#c89295]/20 text-white">
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-56 bg-[#472426] border-[#c89295]/20 text-white"
+                    >
                       <div className="px-2 py-1.5">
                         <p className="text-sm font-medium">{user.full_name}</p>
                         <p className="text-xs text-white/60">{user.email}</p>
                       </div>
                       <DropdownMenuSeparator className="bg-white/10" />
-                      <DropdownMenuItem asChild className="cursor-pointer hover:bg-[#221112]">
-                        <Link to={createPageUrl("Profile")} className="flex items-center gap-2">
+                      <DropdownMenuItem
+                        asChild
+                        className="cursor-pointer hover:bg-[#221112]"
+                      >
+                        <Link
+                          to={createPageUrl("Profile")}
+                          className="flex items-center gap-2"
+                        >
                           <User className="w-4 h-4" />
                           Profile
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild className="cursor-pointer hover:bg-[#221112]">
-                        <Link to={createPageUrl("MyEvents")} className="flex items-center gap-2">
+                      <DropdownMenuItem
+                        asChild
+                        className="cursor-pointer hover:bg-[#221112]"
+                      >
+                        <Link
+                          to={createPageUrl("MyEvents")}
+                          className="flex items-center gap-2"
+                        >
                           <List className="w-4 h-4" />
                           My Events
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild className="cursor-pointer hover:bg-[#221112]">
-                        <Link to={createPageUrl("Favorites")} className="flex items-center gap-2">
+                      <DropdownMenuItem
+                        asChild
+                        className="cursor-pointer hover:bg-[#221112]"
+                      >
+                        <Link
+                          to={createPageUrl("Favorites")}
+                          className="flex items-center gap-2"
+                        >
                           <Heart className="w-4 h-4" />
                           Favorites
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator className="bg-white/10" />
-                      <DropdownMenuItem onClick={handleLogout} className="cursor-pointer hover:bg-[#221112] text-[#ea2a33]">
+                      <DropdownMenuItem
+                        onClick={handleLogout}
+                        className="cursor-pointer hover:bg-[#221112] text-[#ea2a33]"
+                      >
                         <LogOut className="w-4 h-4 mr-2" />
                         Logout
                       </DropdownMenuItem>
@@ -223,7 +280,11 @@ export default function Layout({ children, currentPageName }) {
                 className="md:hidden text-white"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {mobileMenuOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
               </Button>
             </div>
           </div>
@@ -318,7 +379,8 @@ export default function Layout({ children, currentPageName }) {
                 <span className="text-xl font-bold">Evently</span>
               </div>
               <p className="text-white/60 text-sm">
-                Discover unforgettable events near you. Connect, celebrate, and create memories.
+                Discover unforgettable events near you. Connect, celebrate, and
+                create memories.
               </p>
             </div>
 
@@ -327,17 +389,26 @@ export default function Layout({ children, currentPageName }) {
               <h3 className="font-semibold mb-4 text-white">Quick Links</h3>
               <ul className="space-y-2">
                 <li>
-                  <Link to={createPageUrl("Home")} className="text-white/60 hover:text-[#ea2a33] text-sm smooth-transition">
+                  <Link
+                    to={createPageUrl("Home")}
+                    className="text-white/60 hover:text-[#ea2a33] text-sm smooth-transition"
+                  >
                     Home
                   </Link>
                 </li>
                 <li>
-                  <Link to={createPageUrl("CreateEvent")} className="text-white/60 hover:text-[#ea2a33] text-sm smooth-transition">
+                  <Link
+                    to={createPageUrl("CreateEvent")}
+                    className="text-white/60 hover:text-[#ea2a33] text-sm smooth-transition"
+                  >
                     Create Event
                   </Link>
                 </li>
                 <li>
-                  <Link to={createPageUrl("MyEvents")} className="text-white/60 hover:text-[#ea2a33] text-sm smooth-transition">
+                  <Link
+                    to={createPageUrl("MyEvents")}
+                    className="text-white/60 hover:text-[#ea2a33] text-sm smooth-transition"
+                  >
                     My Events
                   </Link>
                 </li>
@@ -348,16 +419,18 @@ export default function Layout({ children, currentPageName }) {
             <div>
               <h3 className="font-semibold mb-4 text-white">Categories</h3>
               <ul className="space-y-2">
-                {["Music", "Sports", "Arts", "Business", "Food & Drink"].map((cat) => (
-                  <li key={cat}>
-                    <Link
-                      to={createPageUrl("Home") + `?category=${cat}`}
-                      className="text-white/60 hover:text-[#ea2a33] text-sm smooth-transition"
-                    >
-                      {cat}
-                    </Link>
-                  </li>
-                ))}
+                {["Music", "Sports", "Arts", "Business", "Food & Drink"].map(
+                  (cat) => (
+                    <li key={cat}>
+                      <Link
+                        to={createPageUrl("Home") + `?category=${cat}`}
+                        className="text-white/60 hover:text-[#ea2a33] text-sm smooth-transition"
+                      >
+                        {cat}
+                      </Link>
+                    </li>
+                  )
+                )}
               </ul>
             </div>
 
@@ -388,7 +461,10 @@ export default function Layout({ children, currentPageName }) {
           </div>
 
           <div className="border-t border-[#472426]/50 mt-8 pt-8 text-center text-white/60 text-sm">
-            <p>© 2025 Evently. All rights reserved. Discover unforgettable moments.</p>
+            <p>
+              © 2025 Evently. All rights reserved. Discover unforgettable
+              moments.
+            </p>
           </div>
         </div>
       </footer>
