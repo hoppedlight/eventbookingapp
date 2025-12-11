@@ -136,10 +136,37 @@ def update_current_user(request):
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     
     
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Event
+
 @api_view(["GET"])
 def fetch_events(request):
-    events = Event.objects(status="Published")
-    return Response([event.to_json_safe() for event in events])
+    event_id = request.GET.get("id")
+    status_filter = request.GET.get("status")
+
+    if event_id:
+        try:
+            event = Event.objects.get(id=event_id)
+            event_dict = event.to_mongo().to_dict()
+            event_dict["id"] = str(event_dict.pop("_id"))
+            return Response([event_dict])
+        except Event.DoesNotExist:
+            return Response([])
+
+    if status_filter:
+        events = Event.objects(status=status_filter)
+    else:
+        events = Event.objects()
+
+    event_list = []
+    for e in events:
+        edict = e.to_mongo().to_dict()
+        edict["id"] = str(edict.pop("_id"))
+        event_list.append(edict)
+
+    return Response(event_list)
+
 
 
 @api_view(['POST'])
@@ -263,12 +290,3 @@ def update_booking(request, booking_id):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def delete_booking(request, booking_id):
-    try:
-        booking = Booking.objects.get(id=booking_id)
-        booking.delete()
-        return Response({"success": True, "message": "Booking deleted"})
-    except DoesNotExist:
-        return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)

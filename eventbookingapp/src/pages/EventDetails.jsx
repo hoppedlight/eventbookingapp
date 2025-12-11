@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import {
   Calendar,
@@ -26,9 +26,9 @@ import { format } from "date-fns";
 export default function EventDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const urlParams = new URLSearchParams(window.location.search);
+  const location = useLocation();
+  const urlParams = new URLSearchParams(location.search);
   const eventId = urlParams.get("id");
-
   const [user, setUser] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [numTickets, setNumTickets] = useState(1);
@@ -71,7 +71,7 @@ export default function EventDetails() {
     queryFn: async () => {
       if (!event) return [];
       const res = await fetch(
-        `/api/events/?status=Published&category=${event.category}`
+        `http://127.0.0.1:8000/api/events/?status=Published&category=${event.category}`
       );
       const data = await res.json();
       return data.filter((e) => e._id !== event._id).slice(0, 4);

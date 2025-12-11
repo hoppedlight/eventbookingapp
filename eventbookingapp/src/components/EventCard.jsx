@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Calendar, MapPin, Heart, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { createPageUrl } from "../utils";
 import { format } from "date-fns";
 
 export default function EventCard({ event, onFavoriteChange }) {
@@ -57,7 +58,7 @@ export default function EventCard({ event, onFavoriteChange }) {
         ? currentFavorites.filter((id) => id !== event._id)
         : [...currentFavorites, event._id];
 
-      const res = await fetch("/api/me/update/", {
+      const res = await fetch("http://127.0.0.1:8000/api/me/update/", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +80,7 @@ export default function EventCard({ event, onFavoriteChange }) {
   };
 
   return (
-    <Link to={`/event?id=${event._id}`}>
+    <Link to={createPageUrl("EventDetails") + `?id=${event.id}`}>
       <div className="group relative bg-[#472426] rounded-2xl overflow-hidden smooth-transition hover:scale-[1.02] hover:shadow-xl hover:shadow-[#ea2a33]/10">
         {/* Image */}
         <div className="relative h-48 overflow-hidden">
