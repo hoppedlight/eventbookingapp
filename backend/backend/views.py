@@ -140,3 +140,50 @@ def fetch_events(request):
     events = Event.objects(status="Published")
     return Response([event.to_json_safe() for event in events])
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_booking(request):
+    data = request.data
+    try:
+        # Validate required fields
+        event_id = data.get("event_id")
+        user_email = data.get("user_email")
+        total_price = data.get("total_price")
+
+        if not event_id or not user_email or total_price is None:
+            return Response(
+                {"error": "event_id, user_email, and total_price are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Optional fields
+        booking = Booking(
+            event_id=event_id,
+            event_title=data.get("event_title", ""),
+            event_date=data.get("event_date", ""),
+            event_time=data.get("event_time", ""),
+            event_location=data.get("event_location", ""),
+            user_email=user_email,
+            user_name=data.get("user_name", ""),
+            num_tickets=int(data.get("num_tickets", 1)),
+            total_price=float(total_price),
+            booking_status=data.get("booking_status", "Confirmed")
+        )
+        booking.save()
+
+        # Update event attendees_count
+        try:
+            event = Event.objects.get(id=event_id)
+            event.attendees_count = (event.attendees_count or 0) + booking.num_tickets
+            event.save()
+        except DoesNotExist:
+            pass  # Event might not exist
+
+        return Response({
+            "success": True,
+            "booking_id": str(booking.id),
+            "message": "Booking created successfully"
+        })
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    

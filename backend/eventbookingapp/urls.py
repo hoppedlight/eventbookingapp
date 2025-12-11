@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/login/', login_view),
     path('api/me/', get_current_user),
     path('api/me/update/', update_current_user),
-    path('api/events/', fetch_events)
+    path('api/events/', fetch_events),
+    path('api/bookings/')
 ]
 

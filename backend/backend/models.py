@@ -117,3 +117,30 @@ class Event(Document):
     def save(self, *args, **kwargs):
         self.updated_at = datetime.utcnow()
         return super(Event, self).save(*args, **kwargs)
+    
+class Booking(Document):
+    event_id = StringField(required=True)
+    event_title = StringField()
+    event_date = StringField()
+    event_time = StringField()
+    event_location = StringField()
+    user_email = StringField(required=True)
+    user_name = StringField()
+    num_tickets = IntField(default=1)
+    total_price = FloatField(required=True)
+    booking_status = StringField(
+        choices=['Confirmed', 'Cancelled', 'Pending'],
+        default='Confirmed'
+    )
+    created_at = DateTimeField(default=datetime.utcnow)
+    updated_at = DateTimeField(default=datetime.utcnow)
+
+    meta = {
+        'collection': 'bookings',
+        'ordering': ['-created_at'],
+        'strict': False
+    }
+
+    def save(self, *args, **kwargs):
+        self.updated_at = datetime.utcnow()
+        return super(Booking, self).save(*args, **kwargs)
