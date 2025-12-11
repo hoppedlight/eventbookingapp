@@ -65,32 +65,71 @@ export default function CreateEvent() {
 
   useEffect(() => {
     const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate(createPageUrl("Login"));
+        return;
+      }
+
       try {
-        const currentUser = await api.auth.me();
-        setUser(currentUser);
+        const res = await fetch("http://127.0.0.1:8000/api/me/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          console.error("Failed to fetch user:", res.status, res.statusText);
+          navigate(createPageUrl("Login"));
+          return;
+        }
+
+        const data = await res.json();
+        setUser(data);
         setEventData((prev) => ({
           ...prev,
-          organizer_name: currentUser.full_name,
-          organizer_email: currentUser.email,
+          organizer_name: data.full_name,
+          organizer_email: data.email,
+          organizer_phone: data.phone,
         }));
       } catch (error) {
-        api.auth.redirectToLogin(window.location.href);
+        console.error("Error fetching user:", error);
+        navigate(createPageUrl("Login"));
       }
     };
+
     fetchUser();
-  }, []);
+  }, [navigate]);
 
   const createEventMutation = useMutation({
-    mutationFn: (data) => base44.entities.Event.create(data),
+    mutationFn: async (data) => {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/events/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to create event");
+      }
+
+      return res.json();
+    },
     onSuccess: (newEvent) => {
       alert("Event created successfully!");
       navigate(createPageUrl("EventDetails") + `?id=${newEvent.id}`);
     },
     onError: (error) => {
-      alert("Failed to create event. Please try again.");
-      console.error(error);
+      alert("Failed to create event. " + error.message);
     },
   });
+
+  const handleChange = (field, value) => {
+    setEventData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleImageUpload = async (e, field) => {
     const file = e.target.files[0];
@@ -98,12 +137,25 @@ export default function CreateEvent() {
 
     setIsUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setEventData((prev) => ({ ...prev, [field]: file_url }));
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload/", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      handleChange(field, data.file_url);
     } catch (error) {
-      alert("Failed to upload image");
+      alert(error.message);
+    } finally {
+      setIsUploading(false);
     }
-    setIsUploading(false);
   };
 
   const handleSubmit = (e) => {
@@ -124,10 +176,6 @@ export default function CreateEvent() {
     };
 
     createEventMutation.mutate(finalData);
-  };
-
-  const handleChange = (field, value) => {
-    setEventData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -414,7 +462,7 @@ export default function CreateEvent() {
                   </div>
                 </div>
 
-                {/* Additional */}
+                {/* Tags */}
                 <div className="space-y-4 pt-6 border-t border-white/10">
                   <div>
                     <Label className="text-white">Tags (comma separated)</Label>
@@ -431,10 +479,10 @@ export default function CreateEvent() {
                 <div className="flex gap-4 pt-6">
                   <Button
                     type="submit"
-                    disabled={createEventMutation.isPending || isUploading}
+                    disabled={createEventMutation.isLoading || isUploading}
                     className="flex-1 bg-[#ea2a33] hover:bg-[#ea2a33]/90 text-white text-lg py-6 accent-glow"
                   >
-                    {createEventMutation.isPending
+                    {createEventMutation.isLoading
                       ? "Creating..."
                       : "Publish Event"}
                   </Button>

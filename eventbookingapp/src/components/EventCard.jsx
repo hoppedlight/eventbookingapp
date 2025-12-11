@@ -18,7 +18,7 @@ export default function EventCard({ event, onFavoriteChange }) {
 
     const fetchUser = async () => {
       try {
-        const res = await fetch("/api/me/", {
+        const res = await fetch("http://127.0.0.1:8000/api/me/", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
