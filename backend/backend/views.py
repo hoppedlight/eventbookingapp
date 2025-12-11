@@ -242,3 +242,33 @@ def get_booking(request, booking_id):
         })
     except DoesNotExist:
         return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_booking(request, booking_id):
+    try:
+        booking = Booking.objects.get(id=booking_id)
+        data = request.data
+
+        for field in ["booking_status", "num_tickets", "user_name"]:
+            if field in data:
+                setattr(booking, field, data[field])
+
+        booking.save()
+        return Response({"success": True, "message": "Booking updated successfully"})
+    except DoesNotExist:
+        return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_booking(request, booking_id):
+    try:
+        booking = Booking.objects.get(id=booking_id)
+        booking.delete()
+        return Response({"success": True, "message": "Booking deleted"})
+    except DoesNotExist:
+        return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
