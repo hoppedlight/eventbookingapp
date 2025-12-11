@@ -9,3 +9,7 @@
     --radius: 0.5rem;
   }
 }
+
+[data-radix-popper-content-wrapper] {
+  transform: translate(1330px, 31%) !important;
+}
