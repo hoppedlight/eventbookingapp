@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -29,6 +29,7 @@ export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const containerRef = useRef(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -186,82 +187,86 @@ export default function Layout({ children, currentPageName }) {
                       <Heart className="w-5 h-5" />
                     </Button>
                   </Link>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="hidden md:flex rounded-full hover:bg-[#472426]"
-                      >
-                        {user.avatar_url ? (
-                          <img
-                            src={user.avatar_url}
-                            alt={user.full_name}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 bg-gradient-to-br from-[#ea2a33] to-[#c89295] rounded-full flex items-center justify-center">
-                            <User className="w-4 h-4 text-white" />
-                          </div>
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-56 bg-[#472426] border-[#c89295]/20 text-white"
-                    >
-                      <div className="px-2 py-1.5">
-                        <p className="text-sm font-medium">{user.full_name}</p>
-                        <p className="text-xs text-white/60">{user.email}</p>
-                      </div>
-                      <DropdownMenuSeparator className="bg-white/10" />
-                      <DropdownMenuItem
-                        asChild
-                        className="cursor-pointer hover:bg-[#221112]"
-                      >
-                        <Link
-                          to={createPageUrl("Profile")}
-                          className="flex items-center gap-2"
+                  <div ref={containerRef} className="dropdownfix">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="hidden md:flex rounded-full hover:bg-[#472426]"
                         >
-                          <User className="w-4 h-4" />
-                          Profile
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        asChild
-                        className="cursor-pointer hover:bg-[#221112]"
+                          {user.avatar_url ? (
+                            <img
+                              src={user.avatar_url}
+                              alt={user.full_name}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-gradient-to-br from-[#ea2a33] to-[#c89295] rounded-full flex items-center justify-center">
+                              <User className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        container={containerRef.current}
+                        className="w-56 bg-[#472426] border-[#c89295]/20 text-white"
                       >
-                        <Link
-                          to={createPageUrl("MyEvents")}
-                          className="flex items-center gap-2"
+                        <div className="px-2 py-1.5">
+                          <p className="text-sm font-medium">
+                            {user.full_name}
+                          </p>
+                          <p className="text-xs text-white/60">{user.email}</p>
+                        </div>
+                        <DropdownMenuSeparator className="bg-white/10" />
+                        <DropdownMenuItem
+                          asChild
+                          className="cursor-pointer hover:bg-[#221112]"
                         >
-                          <List className="w-4 h-4" />
-                          My Events
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        asChild
-                        className="cursor-pointer hover:bg-[#221112]"
-                      >
-                        <Link
-                          to={createPageUrl("Favorites")}
-                          className="flex items-center gap-2"
+                          <Link
+                            to={createPageUrl("Profile")}
+                            className="flex items-center gap-2"
+                          >
+                            <User className="w-4 h-4" />
+                            Profile
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          asChild
+                          className="cursor-pointer hover:bg-[#221112]"
                         >
-                          <Heart className="w-4 h-4" />
-                          Favorites
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-white/10" />
-                      <DropdownMenuItem
-                        onClick={handleLogout}
-                        className="cursor-pointer hover:bg-[#221112] text-[#ea2a33]"
-                      >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Logout
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                          <Link
+                            to={createPageUrl("MyEvents")}
+                            className="flex items-center gap-2"
+                          >
+                            <List className="w-4 h-4" />
+                            My Events
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          asChild
+                          className="cursor-pointer hover:bg-[#221112]"
+                        >
+                          <Link
+                            to={createPageUrl("Favorites")}
+                            className="flex items-center gap-2"
+                          >
+                            <Heart className="w-4 h-4" />
+                            Favorites
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-white/10" />
+                        <DropdownMenuItem
+                          onClick={handleLogout}
+                          className="cursor-pointer hover:bg-[#221112] text-[#ea2a33]"
+                        >
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Logout
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </>
               ) : (
                 <Button
