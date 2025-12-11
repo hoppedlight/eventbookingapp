@@ -2,7 +2,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from mongoengine.errors import DoesNotExist, NotUniqueError
 import json
-from .models import User, Event
+from .models import User, Event, Booking
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
@@ -135,17 +135,18 @@ def update_current_user(request):
     except DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     
+    
 @api_view(["GET"])
 def fetch_events(request):
     events = Event.objects(status="Published")
     return Response([event.to_json_safe() for event in events])
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_booking(request):
     data = request.data
     try:
-        # Validate required fields
         event_id = data.get("event_id")
         user_email = data.get("user_email")
         total_price = data.get("total_price")
@@ -156,7 +157,6 @@ def create_booking(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Optional fields
         booking = Booking(
             event_id=event_id,
             event_title=data.get("event_title", ""),
@@ -171,13 +171,12 @@ def create_booking(request):
         )
         booking.save()
 
-        # Update event attendees_count
         try:
             event = Event.objects.get(id=event_id)
             event.attendees_count = (event.attendees_count or 0) + booking.num_tickets
             event.save()
         except DoesNotExist:
-            pass  # Event might not exist
+            pass 
 
         return Response({
             "success": True,
@@ -187,3 +186,59 @@ def create_booking(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_bookings(request):
+    try:
+        user_email = request.query_params.get("user_email")
+        if user_email:
+            bookings = Booking.objects(user_email=user_email)
+        else:
+            bookings = Booking.objects()
+
+        bookings_list = []
+        for b in bookings:
+            bookings_list.append({
+                "id": str(b.id),
+                "event_id": b.event_id,
+                "event_title": b.event_title,
+                "event_date": b.event_date,
+                "event_time": b.event_time,
+                "event_location": b.event_location,
+                "user_email": b.user_email,
+                "user_name": b.user_name,
+                "num_tickets": b.num_tickets,
+                "total_price": b.total_price,
+                "booking_status": b.booking_status,
+                "created_at": b.created_at.isoformat(),
+                "updated_at": b.updated_at.isoformat()
+            })
+
+        return Response(bookings_list)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_booking(request, booking_id):
+    try:
+        booking = Booking.objects.get(id=booking_id)
+        return Response({
+            "id": str(booking.id),
+            "event_id": booking.event_id,
+            "event_title": booking.event_title,
+            "event_date": booking.event_date,
+            "event_time": booking.event_time,
+            "event_location": booking.event_location,
+            "user_email": booking.user_email,
+            "user_name": booking.user_name,
+            "num_tickets": booking.num_tickets,
+            "total_price": booking.total_price,
+            "booking_status": booking.booking_status,
+            "created_at": booking.created_at.isoformat(),
+            "updated_at": booking.updated_at.isoformat()
+        })
+    except DoesNotExist:
+        return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
