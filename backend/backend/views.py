@@ -2,7 +2,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from mongoengine.errors import DoesNotExist, NotUniqueError
 import json
-from .models import User
+from .models import User, Event
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
@@ -134,3 +134,8 @@ def update_current_user(request):
         return Response(user_data)
     except DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(["GET"])
+def fetch_events(request):
+    events = Event.objects(status="Published")
+    return Response([event.to_mongo() for event in events])

@@ -16,12 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from backend.views import login_view, register_view, get_current_user, update_current_user
+from backend.views import login_view, register_view, get_current_user, update_current_user, fetch_events
 
 urlpatterns = [
     path('api/register/', register_view),
     path('api/login/', login_view),
     path('api/me/', get_current_user),
     path('api/me/update/', update_current_user),
+    path('api/events', fetch_events)
 ]
 
