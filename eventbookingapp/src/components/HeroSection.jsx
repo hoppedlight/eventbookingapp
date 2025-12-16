@@ -49,7 +49,7 @@ export default function HeroSection() {
             >
               <a href="#events" className="flex items-center gap-2">
                 Explore Events
-                <ArrowDown className="w-5 h-5 group-hover:translate-x-1 smooth-transition" />
+                <ArrowDown className="w-5 h-5" />
               </a>
             </Button>
             <Button
