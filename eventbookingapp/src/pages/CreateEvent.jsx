@@ -102,7 +102,7 @@ export default function CreateEvent() {
   const createEventMutation = useMutation({
     mutationFn: async (data) => {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://127.0.0.1:8000/api/events/", {
+      const res = await fetch("http://127.0.0.1:8000/api/events/create/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

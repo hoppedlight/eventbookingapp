@@ -168,6 +168,54 @@ def fetch_events(request):
     return Response(event_list)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_event(request):
+    try:
+        data = request.data
+
+        event = Event(
+            title=data.get("title"),
+            description=data.get("description"),
+            category=data.get("category"),
+            subcategory=data.get("subcategory", ""),
+            date=data.get("date"),
+            time=data.get("time"),
+            location=data.get("location"),
+            city=data.get("city"),
+            address=data.get("address", ""),
+            price=float(data.get("price", 0)),
+            ticket_type=data.get("ticket_type"),
+            capacity=data.get("capacity"),
+            organizer_name=data.get("organizer_name"),
+            organizer_email=data.get("organizer_email"),
+            organizer_phone=data.get("organizer_phone"),
+            image_url=data.get("image_url", ""),
+            banner_url=data.get("banner_url", ""),
+            tags=data.get("tags", []),
+            status=data.get("status", "Published"),
+            featured=data.get("featured", False),
+            attendees_count=0,
+        )
+
+        event.save()
+
+        return Response(
+            {
+                "success": True,
+                "id": str(event.id),
+                "message": "Event created successfully",
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
