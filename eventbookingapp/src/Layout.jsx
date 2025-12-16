@@ -74,7 +74,8 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const handleLogout = async () => {
-    await api.auth.logout();
+    localStorage.removeItem("token");
+    window.location.href = "/";
   };
 
   const navLinks = [

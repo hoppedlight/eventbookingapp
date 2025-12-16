@@ -2,6 +2,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from mongoengine.errors import DoesNotExist, NotUniqueError
 import json
+import os
+import uuid
+from django.conf import settings
+from django.core.files.storage import default_storage
 from .models import User, Event, Booking
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -338,3 +342,31 @@ def update_booking(request, booking_id):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def upload_file(request):
+    if "file" not in request.FILES:
+        return Response(
+            {"error": "No file provided"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    file = request.FILES["file"]
+
+    if not file.content_type.startswith("image/"):
+        return Response(
+            {"error": "Only image uploads are allowed"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    ext = os.path.splitext(file.name)[1]
+    filename = f"{uuid.uuid4()}{ext}"
+
+    upload_path = os.path.join("uploads", filename)
+    saved_path = default_storage.save(upload_path, file)
+
+    file_url = request.build_absolute_uri(
+        settings.MEDIA_URL + saved_path
+    )
+
+    return Response({"file_url": file_url}, status=status.HTTP_201_CREATED)
