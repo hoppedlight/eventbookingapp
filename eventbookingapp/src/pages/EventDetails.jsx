@@ -119,9 +119,16 @@ export default function EventDetails() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          event_id: event._id,
+          event_id: event.id,
+          user_email: user.email,
+          user_name: user.full_name,
+          event_title: event.title,
+          event_date: event.date,
+          event_time: event.time,
+          event_location: `${event.location}, ${event.city}`,
           num_tickets: numTickets,
-          total_price: event.price * numTickets,
+          total_price:
+            event.ticket_type === "Free" ? 0 : event.price * numTickets,
         }),
       });
 

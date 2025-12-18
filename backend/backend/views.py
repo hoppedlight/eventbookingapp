@@ -229,6 +229,7 @@ def create_booking(request):
         event_id = data.get("event_id")
         user_email = data.get("user_email")
         total_price = data.get("total_price")
+        print(f"{event_id}, {user_email}, {total_price}")
 
         if not event_id or not user_email or total_price is None:
             return Response(
