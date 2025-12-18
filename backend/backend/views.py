@@ -144,7 +144,6 @@ def update_current_user(request):
     
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
 def fetch_events(request):
     event_id = request.GET.get("id")
     status_filter = request.GET.get("status")
