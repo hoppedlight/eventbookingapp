@@ -59,10 +59,13 @@ export default function MyEvents() {
 
   const deleteEventMutation = useMutation({
     mutationFn: async (eventId) => {
-      const res = await fetch(`http://127.0.0.1:8000/api/events/${eventId}/`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `http://127.0.0.1:8000/api/events/delete/${eventId}/`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (!res.ok) throw new Error("Delete failed");
     },
     onSuccess: () => {

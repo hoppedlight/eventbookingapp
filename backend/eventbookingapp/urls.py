@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-from backend.views import login_view, register_view, get_current_user, update_current_user, fetch_events, create_booking, create_event, upload_file
+from backend.views import login_view, register_view, get_current_user, update_current_user, fetch_events, create_booking, create_event, upload_file, delete_event
 
 urlpatterns = [
     path('api/register/', register_view),
@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/me/update/', update_current_user),
     path('api/events/', fetch_events),
     path("api/events/create/", create_event),
+    path("api/events/delete/<str:event_id>/", delete_event, name="delete_event"),
     path('api/bookings/', create_booking),
     path("api/upload/", upload_file, name="upload-file"),
 ]

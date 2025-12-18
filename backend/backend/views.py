@@ -227,6 +227,34 @@ def create_event(request):
         )
 
 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_event(request, event_id):
+    try:
+        event = Event.objects.get(id=event_id)
+        
+        if event.created_by != request.user.email:
+            return Response(
+                {"error": "You don't have permission to delete this event"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        event.delete()
+        return Response(
+            {"success": True, "message": "Event deleted successfully"},
+            status=status.HTTP_200_OK
+        )
+    except DoesNotExist:
+        return Response(
+            {"error": "Event not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
