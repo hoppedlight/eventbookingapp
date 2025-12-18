@@ -14,6 +14,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from mongoengine.errors import DoesNotExist
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Event
 
 @csrf_exempt
 def register_view(request):
@@ -139,15 +142,13 @@ def update_current_user(request):
     except DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     
-    
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .models import Event
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def fetch_events(request):
     event_id = request.GET.get("id")
     status_filter = request.GET.get("status")
+    created_by_who = request.GET.get("created_by")
 
     if event_id:
         try:
@@ -157,11 +158,16 @@ def fetch_events(request):
             return Response([event_dict])
         except Event.DoesNotExist:
             return Response([])
-
+        
+    events = Event.objects()
+        
+    if created_by_who == "me":
+        events = events.filter(created_by=request.user.email)
+    elif created_by_who:
+        events = events.filter(created_by=created_by_who)
+    
     if status_filter:
-        events = Event.objects(status=status_filter)
-    else:
-        events = Event.objects()
+        events = events.filter(status=status_filter)
 
     event_list = []
     for e in events:
@@ -177,6 +183,7 @@ def fetch_events(request):
 def create_event(request):
     try:
         data = request.data
+        user = User.objects.get(id=request.user.id)
 
         event = Event(
             title=data.get("title"),
@@ -191,15 +198,16 @@ def create_event(request):
             price=float(data.get("price", 0)),
             ticket_type=data.get("ticket_type"),
             capacity=data.get("capacity"),
-            organizer_name=data.get("organizer_name"),
-            organizer_email=data.get("organizer_email"),
-            organizer_phone=data.get("organizer_phone"),
+            organizer_name=user.full_name,
+            organizer_email=user.email,
+            organizer_phone=user.phone,
             image_url=data.get("image_url", ""),
             banner_url=data.get("banner_url", ""),
             tags=data.get("tags", []),
             status=data.get("status", "Published"),
             featured=data.get("featured", False),
             attendees_count=0,
+            created_by=user.email
         )
 
         event.save()

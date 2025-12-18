@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "../utils";
 import {
   Calendar,
@@ -18,222 +18,171 @@ import { format } from "date-fns";
 
 export default function MyEvents() {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const currentUser = await api.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        api.auth.redirectToLogin(window.location.href);
-      }
-    };
-    fetchUser();
-  }, []);
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
-  const { data: myEvents, isLoading } = useQuery({
-    queryKey: ["myEvents", user?.email],
-    queryFn: async () => {
-      if (!user) return [];
-      return await api.entities.Event.filter(
-        { created_by: user.email },
-        "-created_date"
-      );
-    },
+    fetch(`http://127.0.0.1:8000/api/me/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Unauthorized");
+        return res.json();
+      })
+      .then(setUser)
+      .catch(() => {
+        localStorage.removeItem("token");
+        navigate(createPageUrl("Login"));
+      });
+  }, [token, navigate]);
+
+  const { data: myEvents = [], isLoading } = useQuery({
+    queryKey: ["myEvents"],
     enabled: !!user,
-    initialData: [],
+    queryFn: async () => {
+      const res = await fetch(
+        `http://127.0.0.1:8000/api/events/?created_by=me`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) throw new Error("Failed to fetch events");
+      return res.json();
+    },
   });
 
   const deleteEventMutation = useMutation({
-    mutationFn: (eventId) => api.entities.Event.delete(eventId),
+    mutationFn: async (eventId) => {
+      const res = await fetch(`http://127.0.0.1:8000/api/events/${eventId}/`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Delete failed");
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(["myEvents"]);
-      alert("Event deleted successfully!");
     },
   });
 
-  const handleDelete = (eventId, eventTitle) => {
-    if (window.confirm(`Are you sure you want to delete "${eventTitle}"?`)) {
-      deleteEventMutation.mutate(eventId);
+  const handleDelete = (id, title) => {
+    if (window.confirm(`Delete "${title}"? This cannot be undone.`)) {
+      deleteEventMutation.mutate(id);
     }
   };
 
   if (!user) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-        <div className="animate-pulse">Loading...</div>
+      <div className="max-w-7xl mx-auto py-20 text-center text-white/60">
+        Loading...
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-7xl mx-auto px-4 py-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+      <div className="flex flex-col md:flex-row justify-between gap-6 mb-12">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-3">My Events</h1>
-          <p className="text-white/60 text-lg">
-            {isLoading ? "Loading..." : `Manage your ${myEvents.length} events`}
+          <h1 className="text-4xl font-bold text-white mb-2">My Events</h1>
+          <p className="text-white/60">
+            {isLoading ? "Loading..." : `You created ${myEvents.length} events`}
           </p>
         </div>
+
         <Link to={createPageUrl("CreateEvent")}>
-          <Button className="bg-[#ea2a33] hover:bg-[#ea2a33]/90 text-white accent-glow">
+          <Button className="bg-[#ea2a33] hover:bg-[#ea2a33]/90">
             <PlusCircle className="w-5 h-5 mr-2" />
-            Create New Event
+            Create Event
           </Button>
         </Link>
       </div>
 
-      {/* Events List */}
-      {isLoading ? (
-        <div className="grid gap-6">
-          {[...Array(3)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-[#472426] rounded-2xl h-48 animate-pulse"
-            />
-          ))}
-        </div>
-      ) : myEvents.length === 0 ? (
+      {/* Empty State */}
+      {!isLoading && myEvents.length === 0 && (
         <div className="text-center py-20">
-          <div className="w-24 h-24 mx-auto mb-6 bg-[#472426] rounded-full flex items-center justify-center">
-            <Calendar className="w-12 h-12 text-white/40" />
-          </div>
-          <h3 className="text-2xl font-bold text-white mb-3">No Events Yet</h3>
-          <p className="text-white/60 text-lg mb-8 max-w-md mx-auto">
-            Create your first event and start connecting with your audience
+          <Calendar className="w-16 h-16 mx-auto mb-4 text-white/40" />
+          <h3 className="text-2xl font-bold text-white mb-2">No events yet</h3>
+          <p className="text-white/60 mb-6">
+            Create your first event to get started
           </p>
           <Link to={createPageUrl("CreateEvent")}>
-            <Button className="bg-[#ea2a33] hover:bg-[#ea2a33]/90 text-white accent-glow">
+            <Button className="bg-[#ea2a33]">
               <PlusCircle className="w-5 h-5 mr-2" />
-              Create Your First Event
+              Create Event
             </Button>
           </Link>
         </div>
-      ) : (
-        <div className="grid gap-6">
-          {myEvents.map((event) => (
-            <Card
-              key={event.id}
-              className="bg-[#472426] border-none overflow-hidden group hover:shadow-xl hover:shadow-[#ea2a33]/10 smooth-transition"
-            >
-              <CardContent className="p-0">
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Image */}
-                  <div className="relative md:w-80 h-48 md:h-auto overflow-hidden flex-shrink-0">
-                    <img
-                      src={
-                        event.image_url ||
-                        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800"
-                      }
-                      alt={event.title}
-                      className="w-full h-full object-cover smooth-transition group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#472426]/50" />
-                    {event.featured && (
-                      <Badge className="absolute top-4 left-4 bg-[#ea2a33] border-none">
-                        Featured
-                      </Badge>
-                    )}
+      )}
+
+      {/* Events */}
+      <div className="grid gap-6">
+        {myEvents.map((event) => (
+          <Card key={event.id} className="bg-[#472426] border-none">
+            <CardContent className="p-6 flex flex-col md:flex-row gap-6">
+              {/* Image */}
+              <img
+                src={event.image_url}
+                alt={event.title}
+                className="w-full md:w-64 h-40 object-cover rounded-xl"
+              />
+
+              {/* Info */}
+              <div className="flex-1">
+                <div className="flex justify-between mb-2">
+                  <h3 className="text-2xl font-bold text-white">
+                    {event.title}
+                  </h3>
+                  <Badge>{event.status}</Badge>
+                </div>
+
+                <p className="text-white/70 mb-4 line-clamp-2">
+                  {event.description}
+                </p>
+
+                <div className="grid sm:grid-cols-2 gap-3 text-sm text-white/70">
+                  <div className="flex gap-2">
+                    <Calendar className="w-4 h-4 text-[#ea2a33]" />
+                    {format(new Date(event.date), "MMM d, yyyy")} {event.time}
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-1 p-6 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-[#ea2a33] smooth-transition">
-                            {event.title}
-                          </h3>
-                          <Badge className="bg-[#c89295]/20 text-[#c89295] border-none">
-                            {event.category}
-                          </Badge>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={`${
-                            event.status === "Published"
-                              ? "border-green-500 text-green-500"
-                              : event.status === "Draft"
-                              ? "border-yellow-500 text-yellow-500"
-                              : "border-red-500 text-red-500"
-                          }`}
-                        >
-                          {event.status}
-                        </Badge>
-                      </div>
-
-                      <p className="text-white/70 line-clamp-2 mb-4">
-                        {event.description}
-                      </p>
-
-                      <div className="grid sm:grid-cols-2 gap-3 text-sm">
-                        <div className="flex items-center gap-2 text-white/70">
-                          <Calendar className="w-4 h-4 text-[#ea2a33]" />
-                          <span>
-                            {format(new Date(event.date), "MMM d, yyyy")} at{" "}
-                            {event.time}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-white/70">
-                          <MapPin className="w-4 h-4 text-[#ea2a33]" />
-                          <span>
-                            {event.location}, {event.city}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-white/70">
-                          <Users className="w-4 h-4 text-[#ea2a33]" />
-                          <span>{event.attendees_count || 0} attending</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-white/70">
-                          <span className="text-[#ea2a33] font-bold text-lg">
-                            {event.ticket_type === "Free"
-                              ? "Free"
-                              : `$${event.price}`}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-3 mt-6 pt-4 border-t border-white/10">
-                      <Link
-                        to={createPageUrl("EventDetails") + `?id=${event.id}`}
-                        className="flex-1"
-                      >
-                        <Button
-                          variant="outline"
-                          className="w-full border-white/20 text-white hover:bg-[#221112] hover:border-[#ea2a33]"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="outline"
-                        className="border-white/20 text-white hover:bg-[#221112] hover:border-[#ea2a33]"
-                        onClick={() =>
-                          alert("Edit functionality - coming soon!")
-                        }
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="border-white/20 text-red-400 hover:bg-red-500/10 hover:border-red-500"
-                        onClick={() => handleDelete(event.id, event.title)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                  <div className="flex gap-2">
+                    <MapPin className="w-4 h-4 text-[#ea2a33]" />
+                    {event.location}, {event.city}
+                  </div>
+                  <div className="flex gap-2">
+                    <Users className="w-4 h-4 text-[#ea2a33]" />
+                    {event.attendees_count || 0} attending
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+
+                {/* Actions */}
+                <div className="flex gap-3 mt-6">
+                  <Link to={`${createPageUrl("EventDetails")}?id=${event.id}`}>
+                    <Button variant="outline">
+                      <Eye className="w-4 h-4 mr-2" /> View
+                    </Button>
+                  </Link>
+                  <Button variant="outline" disabled>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="text-red-400 border-red-400"
+                    onClick={() => handleDelete(event.id, event.title)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
