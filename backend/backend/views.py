@@ -18,6 +18,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Event
 
+
 @csrf_exempt
 def register_view(request):
     if request.method == "POST":
@@ -42,20 +43,22 @@ def register_view(request):
                 avatar_url=avatar_url,
                 role=role,
                 favorite_categories=[],
-                favorite_events=[]
+                favorite_events=[],
             )
             user.save()
             refresh = RefreshToken.for_user(user)
-            return JsonResponse({
-                "success": True,
-                "message": "User registered successfully",
-                "token": str(refresh.access_token),
-                "user": {
-                    "id": str(user.id),
-                    "email": user.email,
-                    "full_name": user.full_name
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "User registered successfully",
+                    "token": str(refresh.access_token),
+                    "user": {
+                        "id": str(user.id),
+                        "email": user.email,
+                        "full_name": user.full_name,
+                    },
                 }
-            })
+            )
         except NotUniqueError:
             return JsonResponse({"success": False, "message": "Email already exists"})
     return JsonResponse({"success": False, "message": "Only POST method allowed"})
@@ -81,20 +84,18 @@ def login_view(request):
                 "avatar_url": user.avatar_url,
                 "role": user.role,
                 "favorite_categories": user.favorite_categories,
-                "favorite_events": user.favorite_events
+                "favorite_events": user.favorite_events,
             }
-            return JsonResponse({
-                "success": True,
-                "user": user_data,
-                "token": str(refresh.access_token)
-            })
+            return JsonResponse(
+                {"success": True, "user": user_data, "token": str(refresh.access_token)}
+            )
         else:
             return JsonResponse({"success": False, "message": "Invalid password"})
     except User.DoesNotExist:
         return JsonResponse({"success": False, "message": "User does not exist"})
-    
-    
-@api_view(['GET'])
+
+
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_current_user(request):
     try:
@@ -108,25 +109,32 @@ def get_current_user(request):
             "avatar_url": user.avatar_url,
             "role": user.role,
             "favorite_categories": user.favorite_categories,
-            "favorite_events": user.favorite_events
+            "favorite_events": user.favorite_events,
         }
         return Response(user_data)
     except DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(['PUT'])
+@api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def update_current_user(request):
     try:
         user = User.objects.get(id=request.user.id)
         data = request.data
 
-        for field in ['full_name', 'phone', 'city', 'avatar_url', 'favorite_categories', 'favorite_events']:
+        for field in [
+            "full_name",
+            "phone",
+            "city",
+            "avatar_url",
+            "favorite_categories",
+            "favorite_events",
+        ]:
             if field in data:
                 setattr(user, field, data[field])
         user.save()
-        
+
         user_data = {
             "id": str(user.id),
             "email": user.email,
@@ -136,12 +144,12 @@ def update_current_user(request):
             "avatar_url": user.avatar_url,
             "role": user.role,
             "favorite_categories": user.favorite_categories,
-            "favorite_events": user.favorite_events
+            "favorite_events": user.favorite_events,
         }
         return Response(user_data)
     except DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-    
+
 
 @api_view(["GET"])
 def fetch_events(request):
@@ -157,14 +165,14 @@ def fetch_events(request):
             return Response([event_dict])
         except Event.DoesNotExist:
             return Response([])
-        
+
     events = Event.objects()
-        
+
     if created_by_who == "me":
         events = events.filter(created_by=request.user.email)
     elif created_by_who:
         events = events.filter(created_by=created_by_who)
-    
+
     if status_filter:
         events = events.filter(status=status_filter)
 
@@ -177,7 +185,7 @@ def fetch_events(request):
     return Response(event_list)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_event(request):
     try:
@@ -206,7 +214,7 @@ def create_event(request):
             status=data.get("status", "Published"),
             featured=data.get("featured", False),
             attendees_count=0,
-            created_by=user.email
+            created_by=user.email,
         )
 
         event.save()
@@ -227,36 +235,30 @@ def create_event(request):
         )
 
 
-@api_view(['DELETE'])
+@api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
 def delete_event(request, event_id):
     try:
         event = Event.objects.get(id=event_id)
-        
+
         if event.created_by != request.user.email:
             return Response(
                 {"error": "You don't have permission to delete this event"},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         event.delete()
         return Response(
             {"success": True, "message": "Event deleted successfully"},
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
     except DoesNotExist:
-        return Response(
-            {"error": "Event not found"},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        return Response({"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response(
-            {"error": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_booking(request):
     data = request.data
@@ -269,7 +271,7 @@ def create_booking(request):
         if not event_id or not user_email or total_price is None:
             return Response(
                 {"error": "event_id, user_email, and total_price are required"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         booking = Booking(
@@ -282,7 +284,7 @@ def create_booking(request):
             user_name=data.get("user_name", ""),
             num_tickets=int(data.get("num_tickets", 1)),
             total_price=float(total_price),
-            booking_status=data.get("booking_status", "Confirmed")
+            booking_status=data.get("booking_status", "Confirmed"),
         )
         booking.save()
 
@@ -291,18 +293,20 @@ def create_booking(request):
             event.attendees_count = (event.attendees_count or 0) + booking.num_tickets
             event.save()
         except DoesNotExist:
-            pass 
+            pass
 
-        return Response({
-            "success": True,
-            "booking_id": str(booking.id),
-            "message": "Booking created successfully"
-        })
+        return Response(
+            {
+                "success": True,
+                "booking_id": str(booking.id),
+                "message": "Booking created successfully",
+            }
+        )
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    
-@api_view(['GET'])
+
+
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_bookings(request):
     try:
@@ -314,52 +318,87 @@ def list_bookings(request):
 
         bookings_list = []
         for b in bookings:
-            bookings_list.append({
-                "id": str(b.id),
+            bookings_list.append(
+                {
+                    "id": str(b.id),
+                    "event_id": b.event_id,
+                    "event_title": b.event_title,
+                    "event_date": b.event_date,
+                    "event_time": b.event_time,
+                    "event_location": b.event_location,
+                    "user_email": b.user_email,
+                    "user_name": b.user_name,
+                    "num_tickets": b.num_tickets,
+                    "total_price": b.total_price,
+                    "booking_status": b.booking_status,
+                    "created_at": b.created_at.isoformat(),
+                    "updated_at": b.updated_at.isoformat(),
+                }
+            )
+
+        return Response(bookings_list)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_booking(request, booking_id):
+    try:
+        booking = Booking.objects.get(id=booking_id)
+        return Response(
+            {
+                "id": str(booking.id),
+                "event_id": booking.event_id,
+                "event_title": booking.event_title,
+                "event_date": booking.event_date,
+                "event_time": booking.event_time,
+                "event_location": booking.event_location,
+                "user_email": booking.user_email,
+                "user_name": booking.user_name,
+                "num_tickets": booking.num_tickets,
+                "total_price": booking.total_price,
+                "booking_status": booking.booking_status,
+                "created_at": booking.created_at.isoformat(),
+                "updated_at": booking.updated_at.isoformat(),
+            }
+        )
+    except DoesNotExist:
+        return Response(
+            {"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND
+        )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_user_bookings(request):
+    try:
+        user_email = request.user.email
+
+        bookings = Booking.objects.filter(user_email=user_email).order_by("-created_at")
+
+        data = [
+            {
+                "booking_id": str(b.id),
                 "event_id": b.event_id,
                 "event_title": b.event_title,
                 "event_date": b.event_date,
                 "event_time": b.event_time,
                 "event_location": b.event_location,
-                "user_email": b.user_email,
-                "user_name": b.user_name,
                 "num_tickets": b.num_tickets,
                 "total_price": b.total_price,
                 "booking_status": b.booking_status,
-                "created_at": b.created_at.isoformat(),
-                "updated_at": b.updated_at.isoformat()
-            })
+            }
+            for b in bookings
+        ]
 
-        return Response(bookings_list)
+        return Response(data, status=status.HTTP_200_OK)
+
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_booking(request, booking_id):
-    try:
-        booking = Booking.objects.get(id=booking_id)
-        return Response({
-            "id": str(booking.id),
-            "event_id": booking.event_id,
-            "event_title": booking.event_title,
-            "event_date": booking.event_date,
-            "event_time": booking.event_time,
-            "event_location": booking.event_location,
-            "user_email": booking.user_email,
-            "user_name": booking.user_name,
-            "num_tickets": booking.num_tickets,
-            "total_price": booking.total_price,
-            "booking_status": booking.booking_status,
-            "created_at": booking.created_at.isoformat(),
-            "updated_at": booking.updated_at.isoformat()
-        })
-    except DoesNotExist:
-        return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-    
-@api_view(['PUT'])
+
+@api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def update_booking(request, booking_id):
     try:
@@ -373,18 +412,19 @@ def update_booking(request, booking_id):
         booking.save()
         return Response({"success": True, "message": "Booking updated successfully"})
     except DoesNotExist:
-        return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND
+        )
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def upload_file(request):
     if "file" not in request.FILES:
         return Response(
-            {"error": "No file provided"},
-            status=status.HTTP_400_BAD_REQUEST
+            {"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST
         )
 
     file = request.FILES["file"]
@@ -392,7 +432,7 @@ def upload_file(request):
     if not file.content_type.startswith("image/"):
         return Response(
             {"error": "Only image uploads are allowed"},
-            status=status.HTTP_400_BAD_REQUEST
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     ext = os.path.splitext(file.name)[1]
@@ -401,8 +441,6 @@ def upload_file(request):
     upload_path = os.path.join("uploads", filename)
     saved_path = default_storage.save(upload_path, file)
 
-    file_url = request.build_absolute_uri(
-        settings.MEDIA_URL + saved_path
-    )
+    file_url = request.build_absolute_uri(settings.MEDIA_URL + saved_path)
 
     return Response({"file_url": file_url}, status=status.HTTP_201_CREATED)
