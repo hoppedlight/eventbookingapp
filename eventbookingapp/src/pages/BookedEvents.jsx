@@ -2,13 +2,7 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "../utils";
-import {
-  Calendar,
-  MapPin,
-  Ticket,
-  ArrowLeft,
-  Users,
-} from "lucide-react";
+import { Calendar, MapPin, Ticket, ArrowLeft, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +20,7 @@ export default function BookedEvents() {
         return [];
       }
 
-      const res = await fetch("http://127.0.0.1:8000/api/get_bookings/", {
+      const res = await fetch("http://127.0.0.1:8000/api/bookings/get/", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -53,9 +47,7 @@ export default function BookedEvents() {
         </Button>
       </Link>
 
-      <h1 className="text-4xl font-bold text-white mb-10">
-        My Booked Events
-      </h1>
+      <h1 className="text-4xl font-bold text-white mb-10">My Booked Events</h1>
 
       {bookings.length === 0 && (
         <div className="text-center py-20 text-white/60">
@@ -81,9 +73,7 @@ export default function BookedEvents() {
               <div className="space-y-2 text-white/80 text-sm">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  <span>
-                    {format(new Date(booking.event_date), "PPP")}
-                  </span>
+                  <span>{format(new Date(booking.event_date), "PPP")}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
