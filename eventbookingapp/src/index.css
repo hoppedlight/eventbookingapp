@@ -10,6 +10,10 @@
   }
 }
 
-[data-radix-popper-content-wrapper] {
+* {
+  scroll-behavior: smooth;
+}
+
+.dropdownfix [data-radix-popper-content-wrapper] {
   transform: translate(1330px, 31%) !important;
 }

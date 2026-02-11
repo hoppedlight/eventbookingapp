@@ -2,9 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Event } from "@/api/entities/Event"; // Your Event entity
 import HeroSection from "../components/HeroSection";
-import CategoryCarousel from "../components/CategoryCarousel";
 import FilterSidebar from "../components/FilterSidebar";
 import EventCard from "../components/EventCard";
 
@@ -15,10 +13,10 @@ export default function Home() {
     maxPrice: 500,
     city: "",
   });
+
   const [appliedFilters, setAppliedFilters] = useState(filters);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Get category from URL if present
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const categoryParam = urlParams.get("category");
@@ -28,17 +26,22 @@ export default function Home() {
     }
   }, []);
 
-  // Fetch events using the entity
   const {
-    data: events,
+    data: events = [],
     isLoading,
     refetch,
   } = useQuery({
     queryKey: ["events", appliedFilters],
     queryFn: async () => {
-      let allEvents = await Event.filter({ status: "Published" });
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/events/?status=Published"
+      );
 
-      // Frontend filters
+      if (!response.ok) throw new Error("Failed to load events");
+
+      let allEvents = await response.json();
+
+      // Frontend filtering
       if (appliedFilters.category !== "All") {
         allEvents = allEvents.filter(
           (e) => e.category === appliedFilters.category
@@ -62,7 +65,6 @@ export default function Home() {
 
       return allEvents;
     },
-    initialData: [],
   });
 
   const handleApplyFilters = () => {
@@ -90,7 +92,6 @@ export default function Home() {
   return (
     <div>
       <HeroSection />
-      {/* <CategoryCarousel onSelectCategory={handleSelectCategory} /> */}
 
       <div id="events" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between mb-8">
@@ -170,7 +171,7 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {events.map((event) => (
                   <EventCard
-                    key={event._id}
+                    key={event.id || event._id}
                     event={event}
                     onFavoriteChange={refetch}
                   />

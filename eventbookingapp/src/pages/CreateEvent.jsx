@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { api } from "@/api/client";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "../utils";
-import { Upload, Calendar, MapPin, DollarSign, Image as ImageIcon, Sparkles } from "lucide-react";
+import {
+  Upload,
+  Calendar,
+  MapPin,
+  DollarSign,
+  Image as ImageIcon,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,8 +24,16 @@ import {
 } from "@/components/ui/select";
 
 const categories = [
-  "Music", "Sports", "Arts", "Family", "Food & Drink",
-  "Business", "Technology", "Health", "Education", "Other"
+  "Music",
+  "Sports",
+  "Arts",
+  "Family",
+  "Food & Drink",
+  "Business",
+  "Technology",
+  "Health",
+  "Education",
+  "Other",
 ];
 
 export default function CreateEvent() {
@@ -51,32 +65,71 @@ export default function CreateEvent() {
 
   useEffect(() => {
     const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate(createPageUrl("Login"));
+        return;
+      }
+
       try {
-        const currentUser = await api.auth.me();
-        setUser(currentUser);
-        setEventData(prev => ({
+        const res = await fetch("http://127.0.0.1:8000/api/me/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          console.error("Failed to fetch user:", res.status, res.statusText);
+          navigate(createPageUrl("Login"));
+          return;
+        }
+
+        const data = await res.json();
+        setUser(data);
+        setEventData((prev) => ({
           ...prev,
-          organizer_name: currentUser.full_name,
-          organizer_email: currentUser.email,
+          organizer_name: data.full_name,
+          organizer_email: data.email,
+          organizer_phone: data.phone,
         }));
       } catch (error) {
-        api.auth.redirectToLogin(window.location.href);
+        console.error("Error fetching user:", error);
+        navigate(createPageUrl("Login"));
       }
     };
+
     fetchUser();
-  }, []);
+  }, [navigate]);
 
   const createEventMutation = useMutation({
-    mutationFn: (data) => base44.entities.Event.create(data),
+    mutationFn: async (data) => {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://127.0.0.1:8000/api/events/create/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to create event");
+      }
+
+      return res.json();
+    },
     onSuccess: (newEvent) => {
       alert("Event created successfully!");
       navigate(createPageUrl("EventDetails") + `?id=${newEvent.id}`);
     },
     onError: (error) => {
-      alert("Failed to create event. Please try again.");
-      console.error(error);
+      alert("Failed to create event. " + error.message);
     },
   });
+
+  const handleChange = (field, value) => {
+    setEventData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleImageUpload = async (e, field) => {
     const file = e.target.files[0];
@@ -84,19 +137,35 @@ export default function CreateEvent() {
 
     setIsUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setEventData(prev => ({ ...prev, [field]: file_url }));
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("http://127.0.0.1:8000/api/upload/", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      handleChange(field, data.file_url);
     } catch (error) {
-      alert("Failed to upload image");
+      alert(error.message);
+    } finally {
+      setIsUploading(false);
     }
-    setIsUploading(false);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
     const tagsArray = eventData.tags
-      ? eventData.tags.split(",").map(tag => tag.trim()).filter(Boolean)
+      ? eventData.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean)
       : [];
 
     const finalData = {
@@ -109,15 +178,13 @@ export default function CreateEvent() {
     createEventMutation.mutate(finalData);
   };
 
-  const handleChange = (field, value) => {
-    setEventData(prev => ({ ...prev, [field]: value }));
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-white mb-3">Create New Event</h1>
-        <p className="text-white/60 text-lg">Fill in the details to publish your event</p>
+        <p className="text-white/60 text-lg">
+          Fill in the details to publish your event
+        </p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -149,7 +216,9 @@ export default function CreateEvent() {
                     <Textarea
                       required
                       value={eventData.description}
-                      onChange={(e) => handleChange("description", e.target.value)}
+                      onChange={(e) =>
+                        handleChange("description", e.target.value)
+                      }
                       placeholder="Tell people what makes your event special..."
                       rows={6}
                       className="bg-[#221112] border-white/10 text-white placeholder:text-white/40"
@@ -161,14 +230,18 @@ export default function CreateEvent() {
                       <Label className="text-white">Category *</Label>
                       <Select
                         value={eventData.category}
-                        onValueChange={(value) => handleChange("category", value)}
+                        onValueChange={(value) =>
+                          handleChange("category", value)
+                        }
                       >
                         <SelectTrigger className="bg-[#221112] border-white/10 text-white">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-[#472426] border-white/10 text-white">
-                          {categories.map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -178,7 +251,9 @@ export default function CreateEvent() {
                       <Label className="text-white">Subcategory</Label>
                       <Input
                         value={eventData.subcategory}
-                        onChange={(e) => handleChange("subcategory", e.target.value)}
+                        onChange={(e) =>
+                          handleChange("subcategory", e.target.value)
+                        }
                         placeholder="e.g., Rock Concert"
                         className="bg-[#221112] border-white/10 text-white placeholder:text-white/40"
                       />
@@ -252,7 +327,9 @@ export default function CreateEvent() {
                       <Label className="text-white">Full Address</Label>
                       <Input
                         value={eventData.address}
-                        onChange={(e) => handleChange("address", e.target.value)}
+                        onChange={(e) =>
+                          handleChange("address", e.target.value)
+                        }
                         placeholder="123 Main St"
                         className="bg-[#221112] border-white/10 text-white placeholder:text-white/40"
                       />
@@ -272,7 +349,9 @@ export default function CreateEvent() {
                       <Label className="text-white">Ticket Type *</Label>
                       <Select
                         value={eventData.ticket_type}
-                        onValueChange={(value) => handleChange("ticket_type", value)}
+                        onValueChange={(value) =>
+                          handleChange("ticket_type", value)
+                        }
                       >
                         <SelectTrigger className="bg-[#221112] border-white/10 text-white">
                           <SelectValue />
@@ -305,7 +384,9 @@ export default function CreateEvent() {
                         type="number"
                         min="1"
                         value={eventData.capacity}
-                        onChange={(e) => handleChange("capacity", e.target.value)}
+                        onChange={(e) =>
+                          handleChange("capacity", e.target.value)
+                        }
                         placeholder="Unlimited"
                         className="bg-[#221112] border-white/10 text-white placeholder:text-white/40"
                       />
@@ -327,7 +408,11 @@ export default function CreateEvent() {
                         <label className="cursor-pointer">
                           <div className="border-2 border-dashed border-white/20 rounded-lg p-4 hover:border-[#ea2a33] smooth-transition text-center">
                             {eventData.image_url ? (
-                              <img src={eventData.image_url} alt="Preview" className="w-full h-32 object-cover rounded-lg mb-2" />
+                              <img
+                                src={eventData.image_url}
+                                alt="Preview"
+                                className="w-full h-32 object-cover rounded-lg mb-2"
+                              />
                             ) : (
                               <Upload className="w-8 h-8 mx-auto mb-2 text-white/40" />
                             )}
@@ -352,7 +437,11 @@ export default function CreateEvent() {
                         <label className="cursor-pointer">
                           <div className="border-2 border-dashed border-white/20 rounded-lg p-4 hover:border-[#ea2a33] smooth-transition text-center">
                             {eventData.banner_url ? (
-                              <img src={eventData.banner_url} alt="Preview" className="w-full h-32 object-cover rounded-lg mb-2" />
+                              <img
+                                src={eventData.banner_url}
+                                alt="Preview"
+                                className="w-full h-32 object-cover rounded-lg mb-2"
+                              />
                             ) : (
                               <Upload className="w-8 h-8 mx-auto mb-2 text-white/40" />
                             )}
@@ -373,7 +462,7 @@ export default function CreateEvent() {
                   </div>
                 </div>
 
-                {/* Additional */}
+                {/* Tags */}
                 <div className="space-y-4 pt-6 border-t border-white/10">
                   <div>
                     <Label className="text-white">Tags (comma separated)</Label>
@@ -390,10 +479,12 @@ export default function CreateEvent() {
                 <div className="flex gap-4 pt-6">
                   <Button
                     type="submit"
-                    disabled={createEventMutation.isPending || isUploading}
+                    disabled={createEventMutation.isLoading || isUploading}
                     className="flex-1 bg-[#ea2a33] hover:bg-[#ea2a33]/90 text-white text-lg py-6 accent-glow"
                   >
-                    {createEventMutation.isPending ? "Creating..." : "Publish Event"}
+                    {createEventMutation.isLoading
+                      ? "Creating..."
+                      : "Publish Event"}
                   </Button>
                   <Button
                     type="button"
@@ -414,11 +505,17 @@ export default function CreateEvent() {
           <div className="sticky top-24">
             <Card className="bg-[#472426] border-none">
               <CardContent className="p-6">
-                <h3 className="text-lg font-bold text-white mb-4">Live Preview</h3>
+                <h3 className="text-lg font-bold text-white mb-4">
+                  Live Preview
+                </h3>
                 <div className="bg-[#221112] rounded-2xl overflow-hidden">
                   <div className="h-40 bg-gradient-to-br from-[#ea2a33] to-[#c89295] relative">
                     {eventData.image_url && (
-                      <img src={eventData.image_url} alt="Preview" className="w-full h-full object-cover" />
+                      <img
+                        src={eventData.image_url}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
                     )}
                   </div>
                   <div className="p-4 space-y-3">
@@ -426,12 +523,17 @@ export default function CreateEvent() {
                       {eventData.title || "Your Event Title"}
                     </h4>
                     <p className="text-sm text-white/60 line-clamp-2">
-                      {eventData.description || "Event description will appear here..."}
+                      {eventData.description ||
+                        "Event description will appear here..."}
                     </p>
                     <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                      <span className="text-sm text-[#c89295]">{eventData.category}</span>
+                      <span className="text-sm text-[#c89295]">
+                        {eventData.category}
+                      </span>
                       <span className="text-lg font-bold text-[#ea2a33]">
-                        {eventData.ticket_type === "Free" ? "Free" : `$${eventData.price || 0}`}
+                        {eventData.ticket_type === "Free"
+                          ? "Free"
+                          : `$${eventData.price || 0}`}
                       </span>
                     </div>
                   </div>
