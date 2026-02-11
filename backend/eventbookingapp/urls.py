@@ -26,6 +26,7 @@ from backend.views import (
     update_current_user,
     fetch_events,
     create_booking,
+    get_user_bookings,
     create_event,
     upload_file,
     delete_event,
