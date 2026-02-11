@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowDown, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -18,7 +18,9 @@ export default function HeroSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#472426]/50 backdrop-blur-sm rounded-full border border-[#ea2a33]/20">
             <Sparkles className="w-4 h-4 text-[#ea2a33]" />
-            <span className="text-sm text-white/90">Your next adventure awaits</span>
+            <span className="text-sm text-white/90">
+              Your next adventure awaits
+            </span>
           </div>
 
           {/* Main Heading */}
@@ -34,7 +36,8 @@ export default function HeroSection() {
 
           {/* Subheading */}
           <p className="text-xl md:text-2xl text-white/70 max-w-3xl mx-auto leading-relaxed">
-            Connect with experiences that inspire. From concerts to conferences, find events that match your passion.
+            Connect with experiences that inspire. From concerts to conferences,
+            find events that match your passion.
           </p>
 
           {/* CTA Buttons */}
@@ -46,7 +49,7 @@ export default function HeroSection() {
             >
               <a href="#events" className="flex items-center gap-2">
                 Explore Events
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 smooth-transition" />
+                <ArrowDown className="w-5 h-5" />
               </a>
             </Button>
             <Button
@@ -55,9 +58,7 @@ export default function HeroSection() {
               variant="outline"
               className="border-2 border-[#c89295] text-white hover:bg-[#472426] text-lg px-8 py-6"
             >
-              <Link to={createPageUrl("CreateEvent")}>
-                Create Event
-              </Link>
+              <Link to={createPageUrl("CreateEvent")}>Create Event</Link>
             </Button>
           </div>
 
