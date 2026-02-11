@@ -9,6 +9,7 @@ import SearchResults from './pages/SearchResults';
 import Profile from './pages/Profile';
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import BookedEvents from './pages/BookedEvents';
 
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/create" element={<Layout><CreateEvent /></Layout>} />
           <Route path="/favorites" element={<Layout><Favorites /></Layout>} />
           <Route path="/my-events" element={<Layout><MyEvents /></Layout>} />
+          <Route path="/booked-events" element={<Layout><BookedEvents /></Layout>} />
           <Route path="/search" element={<Layout><SearchResults /></Layout>} />
           <Route path="/profile" element={<Layout><Profile /></Layout>} />
         </Routes>
