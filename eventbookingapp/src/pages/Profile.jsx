@@ -171,7 +171,7 @@ export default function Profile() {
 
       {/* TABS */}
       <Tabs defaultValue="settings">
-        <TabsList className="grid grid-cols-3 bg-[#472426]">
+        <TabsList className="grid grid-cols-4 bg-[#472426]">
           <TabsTrigger value="settings">
             <Settings className="w-4 h-4 mr-2" />
             Settings
@@ -183,6 +183,10 @@ export default function Profile() {
           <TabsTrigger value="events">
             <Calendar className="w-4 h-4 mr-2" />
             My Events
+          </TabsTrigger>{" "}
+          <TabsTrigger value="booked">
+            <Calendar className="w-4 h-4 mr-2" />
+            Booked Events
           </TabsTrigger>
         </TabsList>
 
@@ -267,6 +271,11 @@ export default function Profile() {
         <TabsContent value="events" className="text-center">
           <Link to={createPageUrl("MyEvents")}>
             <Button className="bg-[#ea2a33]">Go to My Events</Button>
+          </Link>
+        </TabsContent>
+        <TabsContent value="booked" className="text-center">
+          <Link to="/booked-events">
+            <Button className="bg-[#ea2a33]">Go to Booked Events</Button>
           </Link>
         </TabsContent>
       </Tabs>

@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import EventCard from "../components/EventCard";
 import { format } from "date-fns";
+import HallMatrix from "../components/HallMatrix";
 
 export default function EventDetails() {
   const navigate = useNavigate();
@@ -260,6 +261,7 @@ export default function EventDetails() {
                   ))}
                 </div>
               )}
+              <HallMatrix/>
             </CardContent>
           </Card>
         </div>
