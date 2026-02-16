@@ -35,7 +35,31 @@ export default function EventDetails() {
   const [numTickets, setNumTickets] = useState(1);
   const [isBooking, setIsBooking] = useState(false);
 
+  const [reservedSeats, setReservedSeats] = useState([]);
+  const [selectedSeats, setSelectedSeats] = useState([]);
   const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (!eventId || !token) return;
+
+    const fetchReservedSeats = async () => {
+      try {
+        const res = await fetch(
+          `http://127.0.0.1:8000/api/events/${eventId}/reserved-seats/`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log(res);
+        const data = await res.json();
+        setReservedSeats(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchReservedSeats();
+  }, [eventId, token]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -121,6 +145,7 @@ export default function EventDetails() {
         },
         body: JSON.stringify({
           event_id: event.id,
+          seats: selectedSeats,
           user_email: user.email,
           user_name: user.full_name,
           event_title: event.title,
@@ -129,7 +154,9 @@ export default function EventDetails() {
           event_location: `${event.location}, ${event.city}`,
           num_tickets: numTickets,
           total_price:
-            event.ticket_type === "Free" ? 0 : event.price * numTickets,
+            event.ticket_type === "Free"
+              ? 0
+              : selectedSeats.length * event.price,
         }),
       });
 
@@ -261,7 +288,11 @@ export default function EventDetails() {
                   ))}
                 </div>
               )}
-              <HallMatrix/>
+              <HallMatrix
+                reservedSeats={reservedSeats}
+                selectedSeats={selectedSeats}
+                setSelectedSeats={setSelectedSeats}
+              />
             </CardContent>
           </Card>
         </div>
@@ -276,19 +307,8 @@ export default function EventDetails() {
               </p>
               {event.ticket_type !== "Free" && (
                 <>
-                  <Label className="text-white">Number of Tickets</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max={event.capacity || 10}
-                    value={numTickets}
-                    onChange={(e) =>
-                      setNumTickets(parseInt(e.target.value) || 1)
-                    }
-                    className="bg-[#221112] border-white/10 text-white"
-                  />
                   <p className="text-sm text-white/60">
-                    Total: ${(event.price * numTickets).toFixed(2)}
+                    Total: ${(event.price * selectedSeats.length).toFixed(2)}
                   </p>
                 </>
               )}
