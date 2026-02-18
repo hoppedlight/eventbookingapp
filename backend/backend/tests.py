@@ -116,3 +116,32 @@ class RegisterViewTests(TestCase):
         self.assertFalse(data["success"])
         self.assertIn("POST", data["message"])
 
+class LoginViewTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.User")
+    @patch("backend.views.check_password", return_value=True)
+    @patch("backend.views.RefreshToken")
+    def test_login_success(self, mock_token, mock_check, MockUser):
+        """Correct credentials should return user data and token."""
+        mock_user = make_user()
+        MockUser.objects.get.return_value = mock_user
+
+        mock_refresh = MagicMock()
+        mock_refresh.access_token = "tok"
+        mock_token.for_user.return_value = mock_refresh
+
+        payload = {"email": "test@example.com", "password": "secret"}
+        request = self.factory.post(
+            "/login/", json.dumps(payload), content_type="application/json"
+        )
+
+        from backend.views import login_view
+        response = login_view(request)
+        data = json.loads(response.content)
+
+        self.assertTrue(data["success"])
+        self.assertIn("token", data)
+        self.assertEqual(data["user"]["email"], "test@example.com")
