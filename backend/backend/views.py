@@ -83,29 +83,18 @@ def login_view(request):
         data = json.loads(request.body)
         email = data.get("email")
         password = data.get("password")
-
         user = User.objects.get(email=email)
 
         if check_password(password, user.password):
             refresh = RefreshToken.for_user(user)
-            user_data = {
-                "id": str(user.id),
-                "email": user.email,
-                "full_name": user.full_name,
-                "phone": user.phone,
-                "city": user.city,
-                "avatar_url": user.avatar_url,
-                "role": user.role,
-                "favorite_categories": user.favorite_categories,
-                "favorite_events": user.favorite_events,
-            }
-            return JsonResponse(
-                {"success": True, "user": user_data, "token": str(refresh.access_token)}
-            )
-        else:
-            return JsonResponse({"success": False, "message": "Invalid password"})
+            return JsonResponse({
+                "success": True,
+                "user": serialize_user(user),
+                "token": str(refresh.access_token)
+            })
+        return JsonResponse({"success": False, "message": "Invalid password"}, status=401)
     except User.DoesNotExist:
-        return JsonResponse({"success": False, "message": "User does not exist"})
+        return JsonResponse({"success": False, "message": "User does not exist"}, status=404)
 
 
 @api_view(["GET"])
