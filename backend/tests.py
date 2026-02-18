@@ -403,10 +403,11 @@ class CreateBookingTests(TestCase):
         request.data = {}  # missing event_id, seats, total_price
 
         from backend.views import create_booking
+
         response = create_booking(request)
 
         self.assertEqual(response.status_code, 400)
-        
+
     @patch("backend.views.Booking")
     def test_create_booking_seat_collision(self, MockBooking):
         """Attempting to book an already reserved seat should return 400."""
@@ -427,11 +428,13 @@ class CreateBookingTests(TestCase):
         }
 
         from backend.views import create_booking
+
         response = create_booking(request)
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("already reserved", response.data["error"])
-        
+
+
 class ListBookingsTests(TestCase):
 
     def setUp(self):
@@ -447,7 +450,175 @@ class ListBookingsTests(TestCase):
         request.query_params = {}
 
         from backend.views import list_bookings
+
         response = list_bookings(request)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
+
+    @patch("backend.views.Booking")
+    def test_list_bookings_filtered_by_email(self, MockBooking):
+        """With user_email filter, should pass filter to queryset."""
+        MockBooking.objects.return_value = [make_booking()]
+
+        request = self.factory.get("/bookings/", {"user_email": "test@example.com"})
+        request.user = make_user()
+        request.query_params = {"user_email": "test@example.com"}
+
+        from backend.views import list_bookings
+
+        response = list_bookings(request)
+
+        MockBooking.objects.assert_called_with(user_email="test@example.com")
+        self.assertEqual(response.status_code, 200)
+
+
+class GetBookingTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.Booking")
+    def test_get_booking_success(self, MockBooking):
+        """Valid booking_id should return booking details."""
+        MockBooking.objects.get.return_value = make_booking()
+
+        request = self.factory.get("/bookings/booking123/")
+        request.user = make_user()
+
+        from backend.views import get_booking
+
+        response = get_booking(request, "booking123")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["id"], "booking123")
+
+    @patch("backend.views.Booking")
+    def test_get_booking_not_found(self, MockBooking):
+        """Non-existent booking_id should return 404."""
+        from mongoengine.errors import DoesNotExist
+
+        MockBooking.objects.get.side_effect = DoesNotExist()
+
+        request = self.factory.get("/bookings/ghost/")
+        request.user = make_user()
+
+        from backend.views import get_booking
+
+        response = get_booking(request, "ghost")
+
+        self.assertEqual(response.status_code, 404)
+        
+class UpdateBookingTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.Booking")
+    def test_update_booking_success(self, MockBooking):
+        """Valid update should return success."""
+        MockBooking.objects.get.return_value = make_booking()
+
+        request = self.factory.put("/bookings/booking123/update/")
+        request.user = make_user()
+        request.data = {"booking_status": "Cancelled"}
+
+        from backend.views import update_booking
+        response = update_booking(request, "booking123")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["success"])
+        
+    @patch("backend.views.Booking")
+    def test_update_booking_not_found(self, MockBooking):
+        """Updating a non-existent booking should return 404."""
+        from mongoengine.errors import DoesNotExist
+        MockBooking.objects.get.side_effect = DoesNotExist()
+
+        request = self.factory.put("/bookings/ghost/update/")
+        request.user = make_user()
+        request.data = {"booking_status": "Cancelled"}
+
+        from backend.views import update_booking
+        response = update_booking(request, "ghost")
+
+        self.assertEqual(response.status_code, 404)
+        
+class GetReservedSeatsTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.Booking")
+    def test_get_reserved_seats(self, MockBooking):
+        """Should return list of reserved seat dicts."""
+        seat = MagicMock()
+        seat.row = 2
+        seat.column = 3
+
+        booking = MagicMock()
+        booking.seats = [seat]
+        MockBooking.objects.return_value = [booking]
+
+        request = self.factory.get("/events/event123/reserved-seats/")
+        request.user = make_user()
+
+        from backend.views import get_reserved_seats
+        response = get_reserved_seats(request, "event123")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, [{"row": 2, "column": 3}])
+        
+class GetCurrentUserTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.User")
+    def test_get_current_user_success(self, MockUser):
+        """Authenticated user should get their profile."""
+        MockUser.objects.get.return_value = make_user()
+
+        request = self.factory.get("/users/me/")
+        request.user = make_user()
+
+        from backend.views import get_current_user
+        response = get_current_user(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["email"], "test@example.com")
+
+    @patch("backend.views.User")
+    def test_get_current_user_not_found(self, MockUser):
+        """If user not in DB, should return 404."""
+        from mongoengine.errors import DoesNotExist
+        MockUser.objects.get.side_effect = DoesNotExist()
+
+        request = self.factory.get("/users/me/")
+        request.user = make_user()
+
+        from backend.views import get_current_user
+        response = get_current_user(request)
+
+        self.assertEqual(response.status_code, 404)
+
+class UpdateCurrentUserTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.User")
+    def test_update_user_success(self, MockUser):
+        """Should update allowed fields and return updated profile."""
+        mock_user = make_user()
+        MockUser.objects.get.return_value = mock_user
+
+        request = self.factory.put("/users/me/update/")
+        request.user = make_user()
+        request.data = {"full_name": "Updated Name", "city": "Krakow"}
+
+        from backend.views import update_current_user
+        response = update_current_user(request)
+
+        self.assertEqual(response.status_code, 200)
+        mock_user.save.assert_called_once()
