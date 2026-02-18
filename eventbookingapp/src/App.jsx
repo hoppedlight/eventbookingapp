@@ -10,11 +10,13 @@ import Profile from './pages/Profile';
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import BookedEvents from './pages/BookedEvents';
+import ScrollToTop from './components/ScrollToTop';
 
 
 function App() {
   return (
     <Router>
+      <ScrollToTop/>
         <Routes>
           <Route path="/" element={<Layout><Home /></Layout>} />
           <Route path="/login" element={<Login />} />

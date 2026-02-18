@@ -99,7 +99,7 @@ export default function FilterSidebar({
       </div>
 
       {/* Date Range */}
-      <div className="space-y-3">
+      {/* <div className="space-y-3">
         <Label className="text-white font-semibold flex items-center gap-2">
           <CalendarIcon className="w-4 h-4 text-[#ea2a33]" />
           Date
@@ -114,7 +114,7 @@ export default function FilterSidebar({
               {filters.date ? format(filters.date, "PPP") : "Pick a date"}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0 bg-[#472426] border-white/10">
+          <PopoverContent className="w-auto h-100 p-0 bg-[#472426] border-white/10 absolute top-20">
             <Calendar
               mode="single"
               selected={filters.date}
@@ -123,7 +123,7 @@ export default function FilterSidebar({
             />
           </PopoverContent>
         </Popover>
-      </div>
+      </div> */}
 
       {/* Price Range */}
       <div className="space-y-3">
@@ -139,7 +139,7 @@ export default function FilterSidebar({
             }
             max={500}
             step={10}
-            className="w-full"
+            className="w-full color-[#ea2a33] accent-glow"
           />
           <div className="flex items-center justify-between text-sm">
             <span className="text-white/60">$0</span>

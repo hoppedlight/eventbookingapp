@@ -6,7 +6,7 @@ import os
 import uuid
 from django.conf import settings
 from django.core.files.storage import default_storage
-from .models import User, Event, Booking
+from .models import User, Event, Booking, Seat
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
@@ -262,18 +262,38 @@ def delete_event(request, event_id):
 @permission_classes([IsAuthenticated])
 def create_booking(request):
     data = request.data
+
     try:
         event_id = data.get("event_id")
-        user_email = data.get("user_email")
+        seats = data.get("seats", [])
         total_price = data.get("total_price")
-        print(f"{event_id}, {user_email}, {total_price}")
 
-        if not event_id or not user_email or total_price is None:
+        if not event_id or not seats or total_price is None:
             return Response(
-                {"error": "event_id, user_email, and total_price are required"},
+                {"error": "event_id, seats and total_price are required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Always use authenticated user
+        user_email = request.user.email
+        user_name = getattr(request.user, "full_name", "")
+
+        # ---- CHECK SEAT COLLISIONS ----
+        bookings = Booking.objects(event_id=event_id, booking_status="Confirmed")
+
+        taken_seats = {
+            (seat.row, seat.column) for booking in bookings for seat in booking.seats
+        }
+
+        for seat in seats:
+            if (seat["row"], seat["column"]) in taken_seats:
+                return Response(
+                    {"error": f"Seat {seat} already reserved"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        incoming_seats = data.get("seats", [])
+
+        # ---- CREATE BOOKING ----
         booking = Booking(
             event_id=event_id,
             event_title=data.get("event_title", ""),
@@ -281,29 +301,26 @@ def create_booking(request):
             event_time=data.get("event_time", ""),
             event_location=data.get("event_location", ""),
             user_email=user_email,
-            user_name=data.get("user_name", ""),
-            num_tickets=int(data.get("num_tickets", 1)),
+            user_name=user_name,
+            seats=[Seat(**s) for s in incoming_seats],
+            num_tickets=len(incoming_seats),
             total_price=float(total_price),
-            booking_status=data.get("booking_status", "Confirmed"),
+            booking_status="Confirmed",
         )
+
         booking.save()
 
         try:
             event = Event.objects.get(id=event_id)
-            event.attendees_count = (event.attendees_count or 0) + booking.num_tickets
+            event.attendees_count = (event.attendees_count or 0) + len(seats)
             event.save()
-        except DoesNotExist:
+        except Event.DoesNotExist:
             pass
 
-        return Response(
-            {
-                "success": True,
-                "booking_id": str(booking.id),
-                "message": "Booking created successfully",
-            }
-        )
+        return Response({"success": True, "booking_id": str(booking.id)})
+
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"error": str(e)}, status=500)
 
 
 @api_view(["GET"])
@@ -367,6 +384,21 @@ def get_booking(request, booking_id):
         return Response(
             {"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND
         )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_reserved_seats(request, event_id):
+
+    bookings = Booking.objects(event_id=event_id, booking_status="Confirmed")
+
+    reserved = [
+        {"row": seat.row, "column": seat.column}
+        for booking in bookings
+        for seat in booking.seats
+    ]
+
+    return Response(reserved)
 
 
 @api_view(["GET"])

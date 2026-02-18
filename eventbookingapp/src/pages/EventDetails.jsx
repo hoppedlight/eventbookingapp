@@ -2,24 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "../utils";
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  User,
-  Mail,
-  Phone,
-  Ticket,
-  Users,
-  Heart,
-  Share2,
-  ArrowLeft,
-} from "lucide-react";
+import { Calendar, MapPin, Share2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import EventCard from "../components/EventCard";
 import { format } from "date-fns";
 import HallMatrix from "../components/HallMatrix";
@@ -35,7 +21,31 @@ export default function EventDetails() {
   const [numTickets, setNumTickets] = useState(1);
   const [isBooking, setIsBooking] = useState(false);
 
+  const [reservedSeats, setReservedSeats] = useState([]);
+  const [selectedSeats, setSelectedSeats] = useState([]);
   const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (!eventId || !token) return;
+
+    const fetchReservedSeats = async () => {
+      try {
+        const res = await fetch(
+          `http://127.0.0.1:8000/api/events/${eventId}/reserved-seats/`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log(res);
+        const data = await res.json();
+        setReservedSeats(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchReservedSeats();
+  }, [eventId, token]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -121,6 +131,7 @@ export default function EventDetails() {
         },
         body: JSON.stringify({
           event_id: event.id,
+          seats: selectedSeats,
           user_email: user.email,
           user_name: user.full_name,
           event_title: event.title,
@@ -129,7 +140,9 @@ export default function EventDetails() {
           event_location: `${event.location}, ${event.city}`,
           num_tickets: numTickets,
           total_price:
-            event.ticket_type === "Free" ? 0 : event.price * numTickets,
+            event.ticket_type === "Free"
+              ? 0
+              : selectedSeats.length * event.price,
         }),
       });
 
@@ -187,7 +200,7 @@ export default function EventDetails() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#221112] via-transparent to-transparent" />
         <div className="absolute top-6 right-6 flex gap-3">
-          <Button
+          {/* <Button
             onClick={toggleFavorite}
             size="icon"
             className="bg-[#221112]/80 backdrop-blur-sm hover:bg-[#ea2a33]"
@@ -197,14 +210,14 @@ export default function EventDetails() {
                 isFavorite ? "fill-[#ea2a33] text-[#ea2a33]" : ""
               }`}
             />
-          </Button>
-          <Button
+          </Button> */}
+          {/* <Button
             onClick={handleShare}
             size="icon"
             className="bg-[#221112]/80 backdrop-blur-sm hover:bg-[#ea2a33]"
           >
             <Share2 className="w-5 h-5" />
-          </Button>
+          </Button> */}
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-8">
@@ -261,7 +274,11 @@ export default function EventDetails() {
                   ))}
                 </div>
               )}
-              <HallMatrix/>
+              <HallMatrix
+                reservedSeats={reservedSeats}
+                selectedSeats={selectedSeats}
+                setSelectedSeats={setSelectedSeats}
+              />
             </CardContent>
           </Card>
         </div>
@@ -276,19 +293,8 @@ export default function EventDetails() {
               </p>
               {event.ticket_type !== "Free" && (
                 <>
-                  <Label className="text-white">Number of Tickets</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max={event.capacity || 10}
-                    value={numTickets}
-                    onChange={(e) =>
-                      setNumTickets(parseInt(e.target.value) || 1)
-                    }
-                    className="bg-[#221112] border-white/10 text-white"
-                  />
                   <p className="text-sm text-white/60">
-                    Total: ${(event.price * numTickets).toFixed(2)}
+                    Total: ${(event.price * selectedSeats.length).toFixed(2)}
                   </p>
                 </>
               )}
