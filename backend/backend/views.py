@@ -300,3 +300,72 @@ def upload_file(request):
     file_url = request.build_absolute_uri(settings.MEDIA_URL + saved_path)
 
     return Response({"file_url": file_url}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_reserved_seats(request, event_id):
+    """Returns a list of seats already booked for a specific event"""
+    bookings = Booking.objects(event_id=event_id, booking_status="Confirmed")
+    reserved = [
+        {"row": seat.row, "column": seat.column}
+        for booking in bookings
+        for seat in booking.seats
+    ]
+    return Response(reserved)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_bookings(request):
+    """Admin or general view to list bookings, filterable by email or event"""
+    user_email = request.query_params.get("user_email")
+    event_id = request.query_params.get("event_id")
+
+    bookings = Booking.objects()
+    if user_email:
+        bookings = bookings.filter(user_email=user_email)
+    if event_id:
+        bookings = bookings.filter(event_id=event_id)
+
+    data = [{
+        "id": str(b.id),
+        "event_id": b.event_id,
+        "user_email": b.user_email,
+        "num_tickets": b.num_tickets,
+        "booking_status": b.booking_status,
+        "total_price": b.total_price
+    } for b in bookings]
+    return Response(data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_booking(request, booking_id):
+    """Retrieve details of a single booking"""
+    try:
+        booking = Booking.objects.get(id=booking_id)
+        return Response({
+            "id": str(booking.id),
+            "event_id": booking.event_id,
+            "user_email": booking.user_email,
+            "num_tickets": booking.num_tickets,
+            "booking_status": booking.booking_status
+        })
+    except DoesNotExist:
+        return Response({"error": "Booking not found"}, status=404)
+
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def update_booking(request, booking_id):
+    """Update booking status or details"""
+    try:
+        booking = Booking.objects.get(id=booking_id)
+        data = request.data
+        if "booking_status" in data:
+            booking.booking_status = data["booking_status"]
+        booking.save()
+        return Response({"success": True})
+    except DoesNotExist:
+        return Response({"error": "Booking not found"}, status=404)
