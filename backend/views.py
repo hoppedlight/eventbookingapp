@@ -314,3 +314,18 @@ def get_reserved_seats(request, event_id):
         return Response(reserved)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_bookings(request):
+    return Response([])
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_booking(request, booking_id):
+    return Response({"id": booking_id})
+
+@api_view(["PUT"])
+@permission_classes([IsAuthenticated])
+def update_booking(request, booking_id):
+    return Response({"success": True})
