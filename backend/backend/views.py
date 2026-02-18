@@ -53,6 +53,10 @@ def register_view(request):
         }, status=status.HTTP_201_CREATED)
     except NotUniqueError:
         return Response({"error": "Email already exists"}, status=status.HTTP_400_BAD_REQUEST)
+    required_fields = ["email", "password", "full_name"]
+    for field in required_fields:
+        if not data.get(field):
+            return Response({"error": f"{field} is required"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @csrf_exempt
