@@ -180,3 +180,29 @@ class LoginViewTests(TestCase):
 
         self.assertFalse(data["success"])
         self.assertIn("does not exist", data["message"])
+
+class FetchEventsTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.Event")
+    def test_fetch_all_events(self, MockEvent):
+        """GET without filters should return all events."""
+        mock_event = MagicMock()
+        mock_event.to_mongo.return_value.to_dict.return_value = {
+            "_id": "event123",
+            "title": "Test Event",
+        }
+        MockEvent.objects.return_value = [mock_event]
+
+        request = self.factory.get("/events/")
+        request.user = make_user()
+
+        from backend.views import fetch_events
+        response = fetch_events(request)
+
+        self.assertEqual(response.status_code, 200)
+        data = response.data
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["id"], "event123")
