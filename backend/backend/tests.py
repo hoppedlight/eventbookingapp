@@ -588,3 +588,16 @@ class GetCurrentUserTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["email"], "test@example.com")
 
+    @patch("backend.views.User")
+    def test_get_current_user_not_found(self, MockUser):
+        """If user not in DB, should return 404."""
+        from mongoengine.errors import DoesNotExist
+        MockUser.objects.get.side_effect = DoesNotExist()
+
+        request = self.factory.get("/users/me/")
+        request.user = make_user()
+
+        from backend.views import get_current_user
+        response = get_current_user(request)
+
+        self.assertEqual(response.status_code, 404)
