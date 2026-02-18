@@ -1,3 +1,4 @@
 node_modules
 __pycache__
-.pyc
+*.pyc
+backend/eventbookingapp/__pycache__/settings.cpython-310.pyc
