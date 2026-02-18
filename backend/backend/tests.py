@@ -601,3 +601,24 @@ class GetCurrentUserTests(TestCase):
         response = get_current_user(request)
 
         self.assertEqual(response.status_code, 404)
+
+class UpdateCurrentUserTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.User")
+    def test_update_user_success(self, MockUser):
+        """Should update allowed fields and return updated profile."""
+        mock_user = make_user()
+        MockUser.objects.get.return_value = mock_user
+
+        request = self.factory.put("/users/me/update/")
+        request.user = make_user()
+        request.data = {"full_name": "Updated Name", "city": "Krakow"}
+
+        from backend.views import update_current_user
+        response = update_current_user(request)
+
+        self.assertEqual(response.status_code, 200)
+        mock_user.save.assert_called_once()
