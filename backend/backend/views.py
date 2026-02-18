@@ -252,6 +252,10 @@ def delete_event(request, event_id):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    has_bookings = Booking.objects(event_id=event_id, booking_status="Confirmed").count() > 0
+    if has_bookings:
+        return Response({"error": "Cannot delete event with active bookings"}, status=400)
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
