@@ -304,7 +304,8 @@ class CreateEventTests(TestCase):
 
         self.assertEqual(response.status_code, 500)
         self.assertIn("error", response.data)
-        
+
+
 class DeleteEventTests(TestCase):
 
     def setUp(self):
@@ -321,9 +322,24 @@ class DeleteEventTests(TestCase):
         request.user = user
 
         from backend.views import delete_event
+
         response = delete_event(request, "event123")
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data["success"])
         mock_event.delete.assert_called_once()
 
+    @patch("backend.views.Event")
+    def test_delete_event_forbidden(self, MockEvent):
+        """Non-owner should receive 403."""
+        mock_event = make_event(created_by="other@example.com")
+        MockEvent.objects.get.return_value = mock_event
+
+        request = self.factory.delete("/events/delete/event123/")
+        request.user = make_user(email="me@example.com")
+
+        from backend.views import delete_event
+
+        response = delete_event(request, "event123")
+
+        self.assertEqual(response.status_code, 403)
