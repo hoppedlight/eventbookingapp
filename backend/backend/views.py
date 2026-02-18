@@ -31,50 +31,28 @@ def serialize_user(user):
         "favorite_events": user.favorite_events,
     }
 
-@csrf_exempt
+@api_view(["POST"])
 def register_view(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        email = data.get("email")
-        password = data.get("password")
-        full_name = data.get("full_name")
-        phone = data.get("phone", "")
-        city = data.get("city", "")
-        avatar_url = data.get("avatar_url", "")
-        role = data.get("role", "user")
-
-        try:
-            hashed_password = make_password(password)
-
-            user = User(
-                email=email,
-                password=hashed_password,
-                full_name=full_name,
-                phone=phone,
-                city=city,
-                avatar_url=avatar_url,
-                role=role,
-                favorite_categories=[],
-                favorite_events=[],
-            )
-
-            user.save()
-            refresh = RefreshToken.for_user(user)
-            return JsonResponse(
-                {
-                    "success": True,
-                    "message": "User registered successfully",
-                    "token": str(refresh.access_token),
-                    "user": {
-                        "id": str(user.id),
-                        "email": user.email,
-                        "full_name": user.full_name,
-                    },
-                }
-            )
-        except NotUniqueError:
-            return JsonResponse({"success": False, "message": "Email already exists"})
-    return JsonResponse({"success": False, "message": "Only POST method allowed"})
+    data = request.data
+    try:
+        hashed_password = make_password(data.get("password"))
+        user = User(
+            email=data.get("email"),
+            password=hashed_password,
+            full_name=data.get("full_name"),
+            phone=data.get("phone", ""),
+            city=data.get("city", ""),
+            role=data.get("role", "user")
+        )
+        user.save()
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "success": True,
+            "token": str(refresh.access_token),
+            "user": serialize_user(user)
+        }, status=status.HTTP_201_CREATED)
+    except NotUniqueError:
+        return Response({"error": "Email already exists"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @csrf_exempt
