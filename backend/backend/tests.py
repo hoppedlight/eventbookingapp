@@ -20,3 +20,13 @@ def make_user(**kwargs):
     user.is_authenticated = True
     user.password = kwargs.get("password", "hashed_pw")
     return user
+
+
+def make_event(**kwargs):
+    """Return a lightweight mock Event object."""
+    event = MagicMock()
+    event.id = kwargs.get("id", "event123")
+    event.title = kwargs.get("title", "Test Event")
+    event.created_by = kwargs.get("created_by", "test@example.com")
+    event.attendees_count = kwargs.get("attendees_count", 0)
+    return event
