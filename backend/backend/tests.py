@@ -104,4 +104,15 @@ class RegisterViewTests(TestCase):
 
         self.assertFalse(data["success"])
         self.assertIn("already exists", data["message"])
+        
+    def test_register_wrong_method(self):
+        """GET request should return success=False."""
+        request = self.factory.get("/register/")
+
+        from backend.views import register_view
+        response = register_view(request)
+        data = json.loads(response.content)
+
+        self.assertFalse(data["success"])
+        self.assertIn("POST", data["message"])
 
