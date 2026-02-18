@@ -145,3 +145,21 @@ class LoginViewTests(TestCase):
         self.assertTrue(data["success"])
         self.assertIn("token", data)
         self.assertEqual(data["user"]["email"], "test@example.com")
+        
+    @patch("backend.views.User")
+    @patch("backend.views.check_password", return_value=False)
+    def test_login_wrong_password(self, mock_check, MockUser):
+        """Wrong password should return success=False."""
+        MockUser.objects.get.return_value = make_user()
+
+        payload = {"email": "test@example.com", "password": "wrongpw"}
+        request = self.factory.post(
+            "/login/", json.dumps(payload), content_type="application/json"
+        )
+
+        from backend.views import login_view
+        response = login_view(request)
+        data = json.loads(response.content)
+
+        self.assertFalse(data["success"])
+        self.assertIn("Invalid password", data["message"])
