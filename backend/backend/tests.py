@@ -466,3 +466,22 @@ class ListBookingsTests(TestCase):
 
         MockBooking.objects.assert_called_with(user_email="test@example.com")
         self.assertEqual(response.status_code, 200)
+        
+class GetBookingTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.Booking")
+    def test_get_booking_success(self, MockBooking):
+        """Valid booking_id should return booking details."""
+        MockBooking.objects.get.return_value = make_booking()
+
+        request = self.factory.get("/bookings/booking123/")
+        request.user = make_user()
+
+        from backend.views import get_booking
+        response = get_booking(request, "booking123")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["id"], "booking123")
