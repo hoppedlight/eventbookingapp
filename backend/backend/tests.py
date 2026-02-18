@@ -343,3 +343,19 @@ class DeleteEventTests(TestCase):
         response = delete_event(request, "event123")
 
         self.assertEqual(response.status_code, 403)
+
+    @patch("backend.views.Event")
+    def test_delete_event_not_found(self, MockEvent):
+        """Deleting a non-existent event should return 404."""
+        from mongoengine.errors import DoesNotExist
+
+        MockEvent.objects.get.side_effect = DoesNotExist()
+
+        request = self.factory.delete("/events/delete/missing/")
+        request.user = make_user()
+
+        from backend.views import delete_event
+
+        response = delete_event(request, "missing")
+
+        self.assertEqual(response.status_code, 404)
