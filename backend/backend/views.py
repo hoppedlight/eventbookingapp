@@ -482,4 +482,11 @@ def upload_file(request):
 
     file_url = request.build_absolute_uri(settings.MEDIA_URL + saved_path)
 
+    if file.size > 2 * 1024 * 1024:
+        return Response({"error": "File size exceeds 2MB limit"}, status=400)
+
+    allowed_exts = ['.jpg', '.jpeg', '.png', '.webp']
+    if not any(file.name.lower().endswith(ext) for ext in allowed_exts):
+        return Response({"error": "Unsupported file format"}, status=400)
+
     return Response({"file_url": file_url}, status=status.HTTP_201_CREATED)
