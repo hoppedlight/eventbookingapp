@@ -508,3 +508,23 @@ class GetBookingTests(TestCase):
         response = get_booking(request, "ghost")
 
         self.assertEqual(response.status_code, 404)
+        
+class UpdateBookingTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.Booking")
+    def test_update_booking_success(self, MockBooking):
+        """Valid update should return success."""
+        MockBooking.objects.get.return_value = make_booking()
+
+        request = self.factory.put("/bookings/booking123/update/")
+        request.user = make_user()
+        request.data = {"booking_status": "Cancelled"}
+
+        from backend.views import update_booking
+        response = update_booking(request, "booking123")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["success"])
