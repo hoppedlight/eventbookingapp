@@ -2,24 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "../utils";
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  User,
-  Mail,
-  Phone,
-  Ticket,
-  Users,
-  Heart,
-  Share2,
-  ArrowLeft,
-} from "lucide-react";
+import { Calendar, MapPin, Share2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import EventCard from "../components/EventCard";
 import { format } from "date-fns";
 import HallMatrix from "../components/HallMatrix";
@@ -214,7 +200,7 @@ export default function EventDetails() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#221112] via-transparent to-transparent" />
         <div className="absolute top-6 right-6 flex gap-3">
-          <Button
+          {/* <Button
             onClick={toggleFavorite}
             size="icon"
             className="bg-[#221112]/80 backdrop-blur-sm hover:bg-[#ea2a33]"
@@ -224,14 +210,14 @@ export default function EventDetails() {
                 isFavorite ? "fill-[#ea2a33] text-[#ea2a33]" : ""
               }`}
             />
-          </Button>
-          <Button
+          </Button> */}
+          {/* <Button
             onClick={handleShare}
             size="icon"
             className="bg-[#221112]/80 backdrop-blur-sm hover:bg-[#ea2a33]"
           >
             <Share2 className="w-5 h-5" />
-          </Button>
+          </Button> */}
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-8">

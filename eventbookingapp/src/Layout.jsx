@@ -179,7 +179,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center gap-4">
               {user ? (
                 <>
-                  <Link to={createPageUrl("Favorites")}>
+                  {/* <Link to={createPageUrl("Favorites")}>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -187,7 +187,7 @@ export default function Layout({ children, currentPageName }) {
                     >
                       <Heart className="w-5 h-5" />
                     </Button>
-                  </Link>
+                  </Link> */}
                   <div ref={containerRef} className="dropdownfix">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
