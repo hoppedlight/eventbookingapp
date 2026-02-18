@@ -206,3 +206,22 @@ class FetchEventsTests(TestCase):
         data = response.data
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["id"], "event123")
+        
+    @patch("backend.views.Event")
+    def test_fetch_event_by_id(self, MockEvent):
+        """GET with ?id= should return a single event."""
+        mock_event = MagicMock()
+        mock_event.to_mongo.return_value.to_dict.return_value = {
+            "_id": "event123",
+            "title": "Specific Event",
+        }
+        MockEvent.objects.get.return_value = mock_event
+
+        request = self.factory.get("/events/", {"id": "event123"})
+        request.user = make_user()
+
+        from backend.views import fetch_events
+        response = fetch_events(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data[0]["id"], "event123")
