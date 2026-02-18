@@ -568,3 +568,23 @@ class GetReservedSeatsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, [{"row": 2, "column": 3}])
+        
+class GetCurrentUserTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.User")
+    def test_get_current_user_success(self, MockUser):
+        """Authenticated user should get their profile."""
+        MockUser.objects.get.return_value = make_user()
+
+        request = self.factory.get("/users/me/")
+        request.user = make_user()
+
+        from backend.views import get_current_user
+        response = get_current_user(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["email"], "test@example.com")
+
