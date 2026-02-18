@@ -85,3 +85,23 @@ class RegisterViewTests(TestCase):
         self.assertTrue(data["success"])
         self.assertIn("token", data)
         self.assertEqual(data["user"]["email"], "test@example.com")
+        
+    @patch("backend.views.User")
+    @patch("backend.views.make_password", return_value="hashed_pw")
+    def test_register_duplicate_email(self, mock_hash, MockUser):
+        """Duplicate email should return success=False."""
+        from mongoengine.errors import NotUniqueError
+        MockUser.return_value.save.side_effect = NotUniqueError()
+
+        payload = {"email": "dupe@example.com", "password": "pw", "full_name": "Dupe"}
+        request = self.factory.post(
+            "/register/", json.dumps(payload), content_type="application/json"
+        )
+
+        from backend.views import register_view
+        response = register_view(request)
+        data = json.loads(response.content)
+
+        self.assertFalse(data["success"])
+        self.assertIn("already exists", data["message"])
+
