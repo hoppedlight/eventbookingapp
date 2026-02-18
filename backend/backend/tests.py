@@ -451,3 +451,18 @@ class ListBookingsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
+        
+    @patch("backend.views.Booking")
+    def test_list_bookings_filtered_by_email(self, MockBooking):
+        """With user_email filter, should pass filter to queryset."""
+        MockBooking.objects.return_value = [make_booking()]
+
+        request = self.factory.get("/bookings/", {"user_email": "test@example.com"})
+        request.user = make_user()
+        request.query_params = {"user_email": "test@example.com"}
+
+        from backend.views import list_bookings
+        response = list_bookings(request)
+
+        MockBooking.objects.assert_called_with(user_email="test@example.com")
+        self.assertEqual(response.status_code, 200)
