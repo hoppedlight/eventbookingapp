@@ -156,6 +156,10 @@ def fetch_events(request):
         events = events.filter(created_by=request.user.email)
     elif created_by_who:
         events = events.filter(created_by=created_by_who)
+    elif created_by_who == "me":
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required"}, status=401)
+        events = events.filter(created_by=request.user.email)
 
     if status_filter:
         events = events.filter(status=status_filter)
