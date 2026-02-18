@@ -528,3 +528,18 @@ class UpdateBookingTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data["success"])
+        
+    @patch("backend.views.Booking")
+    def test_update_booking_not_found(self, MockBooking):
+        """Updating a non-existent booking should return 404."""
+        from mongoengine.errors import DoesNotExist
+        MockBooking.objects.get.side_effect = DoesNotExist()
+
+        request = self.factory.put("/bookings/ghost/update/")
+        request.user = make_user()
+        request.data = {"booking_status": "Cancelled"}
+
+        from backend.views import update_booking
+        response = update_booking(request, "ghost")
+
+        self.assertEqual(response.status_code, 404)
