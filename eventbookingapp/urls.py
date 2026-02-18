@@ -34,6 +34,7 @@ from backend.views import (
 )
 
 urlpatterns = [
+    path('', api_root),
     path("api/register/", register_view),
     path("api/login/", login_view),
     path("api/me/", get_current_user),

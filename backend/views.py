@@ -329,3 +329,15 @@ def get_booking(request, booking_id):
 @permission_classes([IsAuthenticated])
 def update_booking(request, booking_id):
     return Response({"success": True})
+
+@api_view(["GET"])
+def api_root(request):
+    return Response({
+        "message": "Welcome to the Event Booking API",
+        "version": "1.0.0",
+        "endpoints": {
+            "auth": "/api/register/",
+            "events": "/api/events/",
+            "bookings": "/api/bookings/"
+        }
+    })
