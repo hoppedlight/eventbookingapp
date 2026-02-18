@@ -300,3 +300,17 @@ def upload_file(request):
     file_url = request.build_absolute_uri(settings.MEDIA_URL + saved_path)
 
     return Response({"file_url": file_url}, status=status.HTTP_201_CREATED)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_reserved_seats(request, event_id):
+    """Retrieves all seats already booked for a specific event."""
+    try:
+        bookings = Booking.objects(event_id=event_id, booking_status="Confirmed")
+        reserved = []
+        for booking in bookings:
+            for seat in booking.seats:
+                reserved.append({"row": seat.row, "column": seat.column})
+        return Response(reserved)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
