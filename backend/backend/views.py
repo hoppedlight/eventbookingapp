@@ -321,6 +321,14 @@ def create_booking(request):
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
+    taken_seats = {(s.row, s.column) for b in bookings for s in b.seats}
+    for seat in seats:
+        if (seat["row"], seat["column"]) in taken_seats:
+            return Response(
+                {"error": f"Seat Row {seat['row']} Col {seat['column']} is occupied"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
