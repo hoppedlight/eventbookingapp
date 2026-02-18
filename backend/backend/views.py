@@ -18,6 +18,18 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Event
 
+def serialize_user(user):
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "full_name": user.full_name,
+        "phone": user.phone,
+        "city": user.city,
+        "avatar_url": user.avatar_url,
+        "role": user.role,
+        "favorite_categories": user.favorite_categories,
+        "favorite_events": user.favorite_events,
+    }
 
 @csrf_exempt
 def register_view(request):
@@ -45,6 +57,7 @@ def register_view(request):
                 favorite_categories=[],
                 favorite_events=[],
             )
+
             user.save()
             refresh = RefreshToken.for_user(user)
             return JsonResponse(
