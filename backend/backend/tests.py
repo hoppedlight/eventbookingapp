@@ -163,3 +163,20 @@ class LoginViewTests(TestCase):
 
         self.assertFalse(data["success"])
         self.assertIn("Invalid password", data["message"])
+        
+    @patch("backend.views.User")
+    def test_login_user_not_found(self, MockUser):
+        """Non-existent user should return success=False."""
+        MockUser.objects.get.side_effect = MockUser.DoesNotExist()
+
+        payload = {"email": "ghost@example.com", "password": "pw"}
+        request = self.factory.post(
+            "/login/", json.dumps(payload), content_type="application/json"
+        )
+
+        from backend.views import login_view
+        response = login_view(request)
+        data = json.loads(response.content)
+
+        self.assertFalse(data["success"])
+        self.assertIn("does not exist", data["message"])
