@@ -79,18 +79,20 @@ class RegisterViewTests(TestCase):
         )
 
         from backend.views import register_view
+
         response = register_view(request)
         data = json.loads(response.content)
 
         self.assertTrue(data["success"])
         self.assertIn("token", data)
         self.assertEqual(data["user"]["email"], "test@example.com")
-        
+
     @patch("backend.views.User")
     @patch("backend.views.make_password", return_value="hashed_pw")
     def test_register_duplicate_email(self, mock_hash, MockUser):
         """Duplicate email should return success=False."""
         from mongoengine.errors import NotUniqueError
+
         MockUser.return_value.save.side_effect = NotUniqueError()
 
         payload = {"email": "dupe@example.com", "password": "pw", "full_name": "Dupe"}
@@ -99,22 +101,25 @@ class RegisterViewTests(TestCase):
         )
 
         from backend.views import register_view
+
         response = register_view(request)
         data = json.loads(response.content)
 
         self.assertFalse(data["success"])
         self.assertIn("already exists", data["message"])
-        
+
     def test_register_wrong_method(self):
         """GET request should return success=False."""
         request = self.factory.get("/register/")
 
         from backend.views import register_view
+
         response = register_view(request)
         data = json.loads(response.content)
 
         self.assertFalse(data["success"])
         self.assertIn("POST", data["message"])
+
 
 class LoginViewTests(TestCase):
 
@@ -139,13 +144,14 @@ class LoginViewTests(TestCase):
         )
 
         from backend.views import login_view
+
         response = login_view(request)
         data = json.loads(response.content)
 
         self.assertTrue(data["success"])
         self.assertIn("token", data)
         self.assertEqual(data["user"]["email"], "test@example.com")
-        
+
     @patch("backend.views.User")
     @patch("backend.views.check_password", return_value=False)
     def test_login_wrong_password(self, mock_check, MockUser):
@@ -158,12 +164,13 @@ class LoginViewTests(TestCase):
         )
 
         from backend.views import login_view
+
         response = login_view(request)
         data = json.loads(response.content)
 
         self.assertFalse(data["success"])
         self.assertIn("Invalid password", data["message"])
-        
+
     @patch("backend.views.User")
     def test_login_user_not_found(self, MockUser):
         """Non-existent user should return success=False."""
@@ -175,11 +182,13 @@ class LoginViewTests(TestCase):
         )
 
         from backend.views import login_view
+
         response = login_view(request)
         data = json.loads(response.content)
 
         self.assertFalse(data["success"])
         self.assertIn("does not exist", data["message"])
+
 
 class FetchEventsTests(TestCase):
 
@@ -200,13 +209,14 @@ class FetchEventsTests(TestCase):
         request.user = make_user()
 
         from backend.views import fetch_events
+
         response = fetch_events(request)
 
         self.assertEqual(response.status_code, 200)
         data = response.data
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["id"], "event123")
-        
+
     @patch("backend.views.Event")
     def test_fetch_event_by_id(self, MockEvent):
         """GET with ?id= should return a single event."""
@@ -221,11 +231,12 @@ class FetchEventsTests(TestCase):
         request.user = make_user()
 
         from backend.views import fetch_events
+
         response = fetch_events(request)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data[0]["id"], "event123")
-    
+
     @patch("backend.views.Event")
     def test_fetch_event_by_id_not_found(self, MockEvent):
         """GET with unknown id should return empty list."""
@@ -235,10 +246,12 @@ class FetchEventsTests(TestCase):
         request.user = make_user()
 
         from backend.views import fetch_events
+
         response = fetch_events(request)
 
         self.assertEqual(response.data, [])
-        
+
+
 class CreateEventTests(TestCase):
 
     def setUp(self):
@@ -268,11 +281,12 @@ class CreateEventTests(TestCase):
         }
 
         from backend.views import create_event
+
         response = create_event(request)
 
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.data["success"])
-        
+
     @patch("backend.views.Event")
     @patch("backend.views.User")
     def test_create_event_exception(self, MockUser, MockEvent):
@@ -285,7 +299,31 @@ class CreateEventTests(TestCase):
         request.data = {"title": "Bad Event"}
 
         from backend.views import create_event
+
         response = create_event(request)
 
         self.assertEqual(response.status_code, 500)
         self.assertIn("error", response.data)
+        
+class DeleteEventTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.Event")
+    def test_delete_event_success(self, MockEvent):
+        """Owner deleting their event should return success."""
+        user = make_user()
+        mock_event = make_event(created_by=user.email)
+        MockEvent.objects.get.return_value = mock_event
+
+        request = self.factory.delete("/events/delete/event123/")
+        request.user = user
+
+        from backend.views import delete_event
+        response = delete_event(request, "event123")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["success"])
+        mock_event.delete.assert_called_once()
+
