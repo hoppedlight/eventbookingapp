@@ -394,3 +394,15 @@ class CreateBookingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data["success"])
         self.assertIn("booking_id", response.data)
+
+    @patch("backend.views.Booking")
+    def test_create_booking_missing_fields(self, MockBooking):
+        """Missing required fields should return 400."""
+        request = self.factory.post("/bookings/create/")
+        request.user = make_user()
+        request.data = {}  # missing event_id, seats, total_price
+
+        from backend.views import create_booking
+        response = create_booking(request)
+
+        self.assertEqual(response.status_code, 400)
