@@ -238,3 +238,37 @@ class FetchEventsTests(TestCase):
         response = fetch_events(request)
 
         self.assertEqual(response.data, [])
+        
+class CreateEventTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.Event")
+    @patch("backend.views.User")
+    def test_create_event_success(self, MockUser, MockEvent):
+        """Authenticated POST with valid data should create an event."""
+        MockUser.objects.get.return_value = make_user()
+        mock_event = make_event()
+        MockEvent.return_value = mock_event
+
+        request = self.factory.post("/events/create/")
+        request.user = make_user()
+        request.data = {
+            "title": "New Event",
+            "description": "A cool event",
+            "category": "Music",
+            "date": "2025-06-01",
+            "time": "18:00",
+            "location": "Poznan",
+            "city": "Poznan",
+            "price": 50,
+            "ticket_type": "Paid",
+            "capacity": 100,
+        }
+
+        from backend.views import create_event
+        response = create_event(request)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.data["success"])
