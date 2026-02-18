@@ -50,3 +50,38 @@ def make_booking(**kwargs):
     booking.updated_at = datetime(2025, 1, 1, 12, 0)
     booking.seats = []
     return booking
+
+
+class RegisterViewTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.User")
+    @patch("backend.views.make_password", return_value="hashed_pw")
+    @patch("backend.views.RefreshToken")
+    def test_register_success(self, mock_token, mock_hash, MockUser):
+        """POST with valid data should return success and a token."""
+        mock_user = make_user()
+        MockUser.return_value = mock_user
+
+        mock_refresh = MagicMock()
+        mock_refresh.access_token = "access_token_value"
+        mock_token.for_user.return_value = mock_refresh
+
+        payload = {
+            "email": "test@example.com",
+            "password": "secret",
+            "full_name": "Test User",
+        }
+        request = self.factory.post(
+            "/register/", json.dumps(payload), content_type="application/json"
+        )
+
+        from backend.views import register_view
+        response = register_view(request)
+        data = json.loads(response.content)
+
+        self.assertTrue(data["success"])
+        self.assertIn("token", data)
+        self.assertEqual(data["user"]["email"], "test@example.com")
