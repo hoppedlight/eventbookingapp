@@ -359,3 +359,38 @@ class DeleteEventTests(TestCase):
         response = delete_event(request, "missing")
 
         self.assertEqual(response.status_code, 404)
+
+
+class CreateBookingTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.Booking")
+    @patch("backend.views.Event")
+    def test_create_booking_success(self, MockEvent, MockBooking):
+        """Valid booking request should return booking_id."""
+        MockBooking.objects.return_value = []  # no existing bookings
+        mock_booking = make_booking()
+        MockBooking.return_value = mock_booking
+        MockEvent.objects.get.return_value = make_event()
+
+        request = self.factory.post("/bookings/create/")
+        request.user = make_user()
+        request.data = {
+            "event_id": "event123",
+            "event_title": "Test Event",
+            "event_date": "2025-06-01",
+            "event_time": "18:00",
+            "event_location": "Poznan",
+            "seats": [{"row": 1, "column": 1}, {"row": 1, "column": 2}],
+            "total_price": 100.0,
+        }
+
+        from backend.views import create_booking
+
+        response = create_booking(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["success"])
+        self.assertIn("booking_id", response.data)
