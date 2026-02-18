@@ -272,3 +272,20 @@ class CreateEventTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertTrue(response.data["success"])
+        
+    @patch("backend.views.Event")
+    @patch("backend.views.User")
+    def test_create_event_exception(self, MockUser, MockEvent):
+        """If an exception is raised, should return 500."""
+        MockUser.objects.get.return_value = make_user()
+        MockEvent.side_effect = Exception("DB error")
+
+        request = self.factory.post("/events/create/")
+        request.user = make_user()
+        request.data = {"title": "Bad Event"}
+
+        from backend.views import create_event
+        response = create_event(request)
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn("error", response.data)
