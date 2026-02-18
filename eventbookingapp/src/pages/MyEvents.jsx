@@ -170,9 +170,9 @@ export default function MyEvents() {
                       <Eye className="w-4 h-4 mr-2" /> View
                     </Button>
                   </Link>
-                  <Button variant="outline" disabled>
+                  {/* <Button variant="outline" disabled>
                     <Edit className="w-4 h-4" />
-                  </Button>
+                  </Button> */}
                   <Button
                     variant="outline"
                     className="text-red-400 border-red-400"

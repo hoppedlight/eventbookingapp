@@ -95,7 +95,7 @@ export default function EventCard({ event, onFavoriteChange }) {
           <div className="absolute inset-0 bg-gradient-to-t from-[#221112] via-transparent to-transparent opacity-60" />
 
           {/* Favorite Button */}
-          <Button
+          {/* <Button
             variant="ghost"
             size="icon"
             className="absolute top-3 right-3 bg-[#221112]/80 backdrop-blur-sm hover:bg-[#ea2a33] smooth-transition"
@@ -107,7 +107,7 @@ export default function EventCard({ event, onFavoriteChange }) {
                 isFavorite ? "fill-[#ea2a33] text-[#ea2a33]" : "text-white"
               }`}
             />
-          </Button>
+          </Button> */}
 
           {/* Featured Badge */}
           {event.featured && (
