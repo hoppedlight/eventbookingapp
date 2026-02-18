@@ -30,3 +30,23 @@ def make_event(**kwargs):
     event.created_by = kwargs.get("created_by", "test@example.com")
     event.attendees_count = kwargs.get("attendees_count", 0)
     return event
+
+
+def make_booking(**kwargs):
+    """Return a lightweight mock Booking object."""
+    booking = MagicMock()
+    booking.id = kwargs.get("id", "booking123")
+    booking.event_id = kwargs.get("event_id", "event123")
+    booking.event_title = kwargs.get("event_title", "Test Event")
+    booking.event_date = kwargs.get("event_date", "2025-01-01")
+    booking.event_time = kwargs.get("event_time", "18:00")
+    booking.event_location = kwargs.get("event_location", "Warsaw")
+    booking.user_email = kwargs.get("user_email", "test@example.com")
+    booking.user_name = kwargs.get("user_name", "Test User")
+    booking.num_tickets = kwargs.get("num_tickets", 2)
+    booking.total_price = kwargs.get("total_price", 100.0)
+    booking.booking_status = kwargs.get("booking_status", "Confirmed")
+    booking.created_at = datetime(2025, 1, 1, 12, 0)
+    booking.updated_at = datetime(2025, 1, 1, 12, 0)
+    booking.seats = []
+    return booking
