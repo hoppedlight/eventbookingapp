@@ -431,3 +431,23 @@ class CreateBookingTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("already reserved", response.data["error"])
+        
+class ListBookingsTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.Booking")
+    def test_list_all_bookings(self, MockBooking):
+        """Without user_email filter, should return all bookings."""
+        MockBooking.objects.return_value = [make_booking()]
+
+        request = self.factory.get("/bookings/")
+        request.user = make_user()
+        request.query_params = {}
+
+        from backend.views import list_bookings
+        response = list_bookings(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
