@@ -403,10 +403,11 @@ class CreateBookingTests(TestCase):
         request.data = {}  # missing event_id, seats, total_price
 
         from backend.views import create_booking
+
         response = create_booking(request)
 
         self.assertEqual(response.status_code, 400)
-        
+
     @patch("backend.views.Booking")
     def test_create_booking_seat_collision(self, MockBooking):
         """Attempting to book an already reserved seat should return 400."""
@@ -427,11 +428,13 @@ class CreateBookingTests(TestCase):
         }
 
         from backend.views import create_booking
+
         response = create_booking(request)
 
         self.assertEqual(response.status_code, 400)
         self.assertIn("already reserved", response.data["error"])
-        
+
+
 class ListBookingsTests(TestCase):
 
     def setUp(self):
@@ -447,11 +450,12 @@ class ListBookingsTests(TestCase):
         request.query_params = {}
 
         from backend.views import list_bookings
+
         response = list_bookings(request)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
-        
+
     @patch("backend.views.Booking")
     def test_list_bookings_filtered_by_email(self, MockBooking):
         """With user_email filter, should pass filter to queryset."""
@@ -462,11 +466,13 @@ class ListBookingsTests(TestCase):
         request.query_params = {"user_email": "test@example.com"}
 
         from backend.views import list_bookings
+
         response = list_bookings(request)
 
         MockBooking.objects.assert_called_with(user_email="test@example.com")
         self.assertEqual(response.status_code, 200)
-        
+
+
 class GetBookingTests(TestCase):
 
     def setUp(self):
@@ -481,7 +487,24 @@ class GetBookingTests(TestCase):
         request.user = make_user()
 
         from backend.views import get_booking
+
         response = get_booking(request, "booking123")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["id"], "booking123")
+
+    @patch("backend.views.Booking")
+    def test_get_booking_not_found(self, MockBooking):
+        """Non-existent booking_id should return 404."""
+        from mongoengine.errors import DoesNotExist
+
+        MockBooking.objects.get.side_effect = DoesNotExist()
+
+        request = self.factory.get("/bookings/ghost/")
+        request.user = make_user()
+
+        from backend.views import get_booking
+
+        response = get_booking(request, "ghost")
+
+        self.assertEqual(response.status_code, 404)
