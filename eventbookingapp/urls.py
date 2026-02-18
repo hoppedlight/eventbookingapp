@@ -31,6 +31,7 @@ from backend.views import (
     create_event,
     upload_file,
     delete_event,
+    api_root,
 )
 
 urlpatterns = [
