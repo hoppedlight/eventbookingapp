@@ -406,3 +406,28 @@ class CreateBookingTests(TestCase):
         response = create_booking(request)
 
         self.assertEqual(response.status_code, 400)
+        
+    @patch("backend.views.Booking")
+    def test_create_booking_seat_collision(self, MockBooking):
+        """Attempting to book an already reserved seat should return 400."""
+        taken_seat = MagicMock()
+        taken_seat.row = 1
+        taken_seat.column = 1
+
+        existing_booking = MagicMock()
+        existing_booking.seats = [taken_seat]
+        MockBooking.objects.return_value = [existing_booking]
+
+        request = self.factory.post("/bookings/create/")
+        request.user = make_user()
+        request.data = {
+            "event_id": "event123",
+            "seats": [{"row": 1, "column": 1}],
+            "total_price": 50.0,
+        }
+
+        from backend.views import create_booking
+        response = create_booking(request)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("already reserved", response.data["error"])
