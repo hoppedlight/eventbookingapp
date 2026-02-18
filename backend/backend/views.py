@@ -177,6 +177,13 @@ def fetch_events(request):
 @permission_classes([IsAuthenticated])
 def create_event(request):
     try:
+        price = float(data.get("price", 0))
+        capacity = int(data.get("capacity", 0))
+        if price < 0 or capacity < 0:
+            return Response({"error": "Price and capacity must be positive"}, status=400)
+    except (ValueError, TypeError):
+        return Response({"error": "Invalid numeric format"}, status=400)
+    try:
         data = request.data
         user = User.objects.get(id=request.user.id)
 
