@@ -225,3 +225,16 @@ class FetchEventsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data[0]["id"], "event123")
+    
+    @patch("backend.views.Event")
+    def test_fetch_event_by_id_not_found(self, MockEvent):
+        """GET with unknown id should return empty list."""
+        MockEvent.objects.get.side_effect = MockEvent.DoesNotExist()
+
+        request = self.factory.get("/events/", {"id": "nonexistent"})
+        request.user = make_user()
+
+        from backend.views import fetch_events
+        response = fetch_events(request)
+
+        self.assertEqual(response.data, [])
