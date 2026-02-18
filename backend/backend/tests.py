@@ -543,3 +543,28 @@ class UpdateBookingTests(TestCase):
         response = update_booking(request, "ghost")
 
         self.assertEqual(response.status_code, 404)
+        
+class GetReservedSeatsTests(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    @patch("backend.views.Booking")
+    def test_get_reserved_seats(self, MockBooking):
+        """Should return list of reserved seat dicts."""
+        seat = MagicMock()
+        seat.row = 2
+        seat.column = 3
+
+        booking = MagicMock()
+        booking.seats = [seat]
+        MockBooking.objects.return_value = [booking]
+
+        request = self.factory.get("/events/event123/reserved-seats/")
+        request.user = make_user()
+
+        from backend.views import get_reserved_seats
+        response = get_reserved_seats(request, "event123")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, [{"row": 2, "column": 3}])
