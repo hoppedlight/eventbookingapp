@@ -1,0 +1,14 @@
+azure-core
+azure-storage-blob
+dj-database-url
+django
+django-cors-headers
+django-storages
+djangorestframework
+djangorestframework_simplejwt
+gunicorn
+mongoengine
+pyjwt
+pymongo
+python-dotenv
+whitenoise
